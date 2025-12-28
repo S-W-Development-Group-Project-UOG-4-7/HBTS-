@@ -79,6 +79,7 @@ class AdminDashboard extends StatelessWidget {
     "Operators",
     const OperatorsDashboard(),
   ),
+
   _adminCard(
     context,
     Icons.analytics,
