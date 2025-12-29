@@ -7,7 +7,7 @@ import {
   adminLogin,
   adminVerifyLoginOtp
 } from "../controllers/auth.controller.js";
-import { requireTempToken } from "../middleware/tempAuth.js";
+import { requireTempToken } from "../middleware/tempAuth.middleware.js";
 
 const router = Router();
 
@@ -23,10 +23,10 @@ router.post(
 
 // ADMIN ROUTES
 router.post("/admin/login", adminLogin);
-router.post(
-  "/admin/login/verify-otp",
+router.post("/admin/login/verify-otp", 
+
   requireTempToken,
   adminVerifyLoginOtp
-);
 
+);  
 export default router;

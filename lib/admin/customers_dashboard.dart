@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/admin_api.dart';
-import '../admin/customer_details_page.dart';
-
-String _search = "";
-
+import 'customer_details_page.dart';
 
 class CustomersDashboard extends StatefulWidget {
   const CustomersDashboard({super.key});
@@ -12,106 +9,110 @@ class CustomersDashboard extends StatefulWidget {
   State<CustomersDashboard> createState() => _CustomersDashboardState();
 }
 
-
 class _CustomersDashboardState extends State<CustomersDashboard> {
-  late Future<List<dynamic>> _customersFuture;
-
+  List<dynamic> _customers = [];
+  bool _loading = true;
+  String _search = "";
 
   @override
   void initState() {
     super.initState();
-    _customersFuture = AdminApi.fetchCustomers();
+    _loadCustomers();
   }
+
+  Future<void> _loadCustomers({String search = ""}) async {
+    setState(() => _loading = true);
+
+    try {
+      final data = await AdminApi.getPassengers(search);
+      setState(() {
+        _customers = data;
+      });
+    } catch (e) {
+      debugPrint("Customer load error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
+  String _safe(dynamic v) => v == null ? "-" : v.toString();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Customers"),
-      ),
-      body: FutureBuilder<List<dynamic>>(
-        future: _customersFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          }
-
-          final customers = snapshot.data!;
-
-          if (customers.isEmpty) {
-            return const Center(child: Text("No customers found"));
-          }
+      appBar: AppBar(title: const Text("Customers")),
+      body: Column(
+        children: [
+          // 🔍 SEARCH BAR
           Padding(
-  padding: const EdgeInsets.all(8),
-  child: TextField(
-    decoration: const InputDecoration(
-      prefixIcon: Icon(Icons.search),
-      hintText: "Search by name, email or phone",
-      border: OutlineInputBorder(),
-    ),
-    onChanged: (value) {
-      setState(() => _search = value.toLowerCase());
-    },
-  ),
-);
+            padding: const EdgeInsets.all(10),
+            child: TextField(
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.search),
+                hintText: "Search by name",
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) {
+                _search = value.trim();
+                _loadCustomers(search: _search);
+              },
+            ),
+          ),
 
+          // 🔄 LOADING
+          if (_loading)
+            const LinearProgressIndicator(),
 
-          return ListView.separated(
-            itemCount: customers.length,
-            separatorBuilder: (_, __) => const Divider(),
-            itemBuilder: (context, index) {
-              final user = customers[index];
+          // 📋 LIST
+          Expanded(
+            child: _customers.isEmpty && !_loading
+                ? const Center(child: Text("No customers found"))
+                : ListView.separated(
+                    itemCount: _customers.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final user =
+                          _customers[index] as Map<String, dynamic>;
 
-              return ListTile(
-                leading: const CircleAvatar(
-                  child: Icon(Icons.person),
-                ),
-                title: Text(user["name"] ?? "No Name"),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(user["email"] ?? "No Email"),
-                    Text("Phone: ${user["phone"] ?? "-"}"),
-                    Text(
-                      "Joined: ${user["created_at"].toString().split('T')[0]}",
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ],
-                ),
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.book_online, size: 18),
-                    Text(
-                      "${user["bookings"] ?? 0}",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-                isThreeLine: true,
-                onTap: () {
-                  // next step: customer details page
-                  onTap: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => CustomerDetailsPage(
-        userId: user["user_id"],
-      ),
-    ),
-  );
-                                };                },
+                      final int userId =
+                          (user["user_id"] as num).toInt();
 
-
-                
-              );
-            },
-          );
-        },
+                      return ListTile(
+                        leading: const CircleAvatar(
+                          child: Icon(Icons.person),
+                        ),
+                        title: Text(_safe(user["name"])),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(_safe(user["email"])),
+                            Text("Phone: ${_safe(user["phone"])}"),
+                            Text(
+                              "Joined: ${_safe(user["created_at"]).toString().split('T')[0]}",
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ],
+                        ),
+                        isThreeLine: true,
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CustomerDetailsPage(
+                                userId: userId,
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }

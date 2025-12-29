@@ -1,25 +1,41 @@
 import jwt from "jsonwebtoken";
 
+/* =========================
+   TEMP TOKEN (OTP STEP 1)
+========================= */
 export function signTempToken(userId) {
   return jwt.sign(
-    { sub: userId, type: "TEMP_2FA" },
+    {
+      userId: userId, // 🔑 REQUIRED
+    },
     process.env.JWT_TEMP_SECRET,
-    { expiresIn: process.env.TEMP_TOKEN_EXPIRES_IN || "10m" }
+    { expiresIn: "5m" }
   );
 }
 
+/* =========================
+   ACCESS TOKEN (OTP STEP 2)
+========================= */
 export function signAccessToken(user) {
   return jwt.sign(
-    { sub: user.user_id, role_id: user.role_id, type: "ACCESS" },
+    {
+      userId: user.user_id, // 🔑 REQUIRED
+      role: user.role,      // 🔑 REQUIRED
+    },
     process.env.JWT_ACCESS_SECRET,
-    { expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN || "15m" }
+    { expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN }
   );
 }
 
+/* =========================
+   REFRESH TOKEN
+========================= */
 export function signRefreshToken(userId) {
   return jwt.sign(
-    { sub: userId, type: "REFRESH" },
+    {
+      userId: userId,
+    },
     process.env.JWT_REFRESH_SECRET,
-    { expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || "30d" }
+    { expiresIn: "30d" }
   );
 }

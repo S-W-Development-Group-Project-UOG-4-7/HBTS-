@@ -1,6 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config({ path: "./.env" }); // if you run from backend/ folder
-// If you run from project root, use: dotenv.config({ path: "./backend/.env" });
+dotenv.config({ path: "./.env" });
 
 import express from "express";
 import cors from "cors";
@@ -10,7 +9,7 @@ import adminRoutes from "./routes/admin.routes.js";
 
 const app = express();
 
-// ✅ CORS — MUST be before routes
+// CORS
 app.use(
   cors({
     origin: true,
@@ -20,21 +19,19 @@ app.use(
   })
 );
 
-// ✅ THIS LINE IS REQUIRED FOR FLUTTER WEB preflight
 app.options("*", cors());
-
 app.use(express.json());
 
-// ✅ Health check
+// Health check
 app.get("/health", (req, res) => {
   res.json({ ok: true });
 });
 
-// ✅ Routes
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 
-// ✅ Start server (only once)
+// Start server
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`✅ API running on http://localhost:${PORT}`);
