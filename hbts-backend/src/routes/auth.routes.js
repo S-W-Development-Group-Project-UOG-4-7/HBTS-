@@ -11,7 +11,6 @@ import { requireTempToken } from "../middleware/tempAuth.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
 import { getMe } from "../controllers/me.controller.js";
 
-import { requireTempToken } from "../middleware/tempAuth.middleware.js";
 
 const router = Router();
 
@@ -27,12 +26,11 @@ router.post(
 
 // ADMIN ROUTES
 router.post("/admin/login", adminLogin);
-router.post("/admin/login/verify-otp", 
-
+router.post(
+  "/admin/login/verify-otp",
   requireTempToken,
   adminVerifyLoginOtp
 );
 router.get("/me", requireAuth, getMe);
 
-);  
 export default router;
