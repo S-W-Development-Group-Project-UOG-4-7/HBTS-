@@ -7,6 +7,10 @@ import {
   adminLogin,
   adminVerifyLoginOtp
 } from "../controllers/auth.controller.js";
+import { requireTempToken } from "../middleware/tempAuth.js";
+import { requireAuth } from "../middleware/auth.middleware.js";
+import { getMe } from "../controllers/me.controller.js";
+
 import { requireTempToken } from "../middleware/tempAuth.middleware.js";
 
 const router = Router();
@@ -27,6 +31,8 @@ router.post("/admin/login/verify-otp",
 
   requireTempToken,
   adminVerifyLoginOtp
+);
+router.get("/me", requireAuth, getMe);
 
 );  
 export default router;

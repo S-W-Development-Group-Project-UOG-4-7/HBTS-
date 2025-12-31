@@ -11,114 +11,248 @@ class CustomerDetailsPage extends StatefulWidget {
 }
 
 class _CustomerDetailsPageState extends State<CustomerDetailsPage> {
-  late Future<Map<String, dynamic>> _customerFuture;
-  late Future<List<dynamic>> _bookingsFuture;
+  Map<String, dynamic>? customer;
+  bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _customerFuture = AdminApi.fetchCustomerDetails(widget.userId);
-    _bookingsFuture = AdminApi.fetchCustomerBookings(widget.userId);
+    _loadCustomer();
   }
 
-  String _safeStr(dynamic v) => (v == null) ? "-" : v.toString();
+  Future<void> _loadCustomer() async {
+    try {
+      final data = await AdminApi.fetchPassengerDetails(widget.userId);
+      if (!mounted) return;
+      setState(() {
+        customer = data;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
+    }
+  }
 
-  String _formatDate(dynamic createdAt) {
-    if (createdAt == null) return "-";
-    final s = createdAt.toString();
-    // Handles both "2025-12-26T..." and "2025-12-26 ..."
-    if (s.contains('T')) return s.split('T')[0];
-    if (s.contains(' ')) return s.split(' ')[0];
-    return s;
+  // ================= ADD =================
+  Future<void> _addPassenger() async {
+    final nameCtrl = TextEditingController();
+    final emailCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
+    final passCtrl = TextEditingController();
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Add Passenger"),
+        content: SingleChildScrollView(
+          child: Column(
+            children: [
+              TextField(
+                controller: nameCtrl,
+                decoration: const InputDecoration(labelText: "Name"),
+              ),
+              TextField(
+                controller: emailCtrl,
+                decoration: const InputDecoration(labelText: "Email"),
+              ),
+              TextField(
+                controller: phoneCtrl,
+                decoration: const InputDecoration(labelText: "Phone"),
+              ),
+              TextField(
+                controller: passCtrl,
+                decoration: const InputDecoration(labelText: "Password"),
+                obscureText: true,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Add"),
+          ),
+        ],
+      ),
+    );
+
+    if (ok == true) {
+      await AdminApi.addPassenger({
+        "name": nameCtrl.text.trim(),
+        "email": emailCtrl.text.trim(),
+        "phone": phoneCtrl.text.trim(),
+        "password": passCtrl.text,
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Passenger added successfully")),
+      );
+
+      // 👈 IMPORTANT: go back so list reloads
+      Navigator.pop(context);
+    }
+  }
+
+  // ================= UPDATE =================
+  Future<void> _updatePassenger() async {
+    if (customer == null) return;
+
+    final nameCtrl = TextEditingController(text: customer!["name"]);
+    final phoneCtrl = TextEditingController(text: customer!["phone"]);
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Update Passenger"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(labelText: "Name"),
+            ),
+            TextField(
+              controller: phoneCtrl,
+              decoration: const InputDecoration(labelText: "Phone"),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Update"),
+          ),
+        ],
+      ),
+    );
+
+    if (ok == true) {
+      await AdminApi.updatePassenger(widget.userId, {
+        "name": nameCtrl.text.trim(),
+        "phone": phoneCtrl.text.trim(),
+      });
+
+      // 🔄 reload from backend (THIS FIXES UPDATE VISIBILITY)
+      await _loadCustomer();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Passenger updated successfully")),
+      );
+    }
+  }
+
+  // ================= DELETE =================
+  Future<void> _deletePassenger() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Delete Passenger"),
+        content: const Text(
+          "Are you sure you want to delete this passenger?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
+    );
+
+    if (ok == true) {
+      await AdminApi.deletePassenger(widget.userId);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Passenger deleted successfully")),
+      );
+
+      Navigator.pop(context); // 👈 back to list
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        body: Center(child: Text(_error!)),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text("Customer Details")),
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: _customerFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          }
-          if (!snapshot.hasData) {
-            return const Center(child: Text("No data found"));
-          }
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              customer!["name"] ?? "-",
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(customer!["email"] ?? "-"),
+            const SizedBox(height: 4),
+            Text("Phone: ${customer!["phone"] ?? "-"}"),
+            const SizedBox(height: 24),
 
-          final user = snapshot.data!;
-
-          return Column(
-            children: [
-              _customerInfo(user),
-              const Divider(),
-              Expanded(child: _bookingHistory()),
-            ],
-          );
-        },
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.add),
+                  label: const Text("Add"),
+                  onPressed: _addPassenger,
+                ),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.edit),
+                  label: const Text("Update"),
+                  onPressed: _updatePassenger,
+                ),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.delete),
+                  label: const Text("Delete"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                  ),
+                  onPressed: _deletePassenger,
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    );
-  }
-
-  Widget _customerInfo(Map<String, dynamic> user) {
-    return ListTile(
-      leading: const CircleAvatar(child: Icon(Icons.person)),
-      title: Text(_safeStr(user["name"])),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(_safeStr(user["email"])),
-          Text("Phone: ${_safeStr(user["phone"])}"),
-          Text("Joined: ${_formatDate(user["created_at"])}"),
-          Text("Verified: ${user["is_verified"] == true ? "Yes" : "No"}"),
-        ],
-      ),
-    );
-  }
-
-  Widget _bookingHistory() {
-    return FutureBuilder<List<dynamic>>(
-      future: _bookingsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(child: Text("Error: ${snapshot.error}"));
-        }
-        if (!snapshot.hasData) {
-          return const Center(child: Text("No booking data"));
-        }
-
-        final bookings = snapshot.data!;
-        if (bookings.isEmpty) {
-          return const Center(child: Text("No bookings found"));
-        }
-
-        return ListView.builder(
-          itemCount: bookings.length,
-          itemBuilder: (context, index) {
-            final b = bookings[index] as Map<String, dynamic>;
-
-            // These keys depend on your backend.
-            // If your backend uses different names, tell me the exact JSON and I’ll match it.
-            final pickup = _safeStr(b["pickup"]);
-            final dropoff = _safeStr(b["dropoff"]);
-            final status = _safeStr(b["status"]);
-            final fare = _safeStr(b["fare"]);
-
-            return ListTile(
-              leading: const Icon(Icons.receipt_long),
-              title: Text("$pickup → $dropoff"),
-              subtitle: Text("Status: $status"),
-              trailing: Text("Rs. $fare"),
-            );
-          },
-        );
-      },
     );
   }
 }

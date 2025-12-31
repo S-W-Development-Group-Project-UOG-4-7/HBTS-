@@ -1,76 +1,93 @@
-import db from "../config/db.js";
+import { pool } from "../db.js";
 import bcrypt from "bcrypt";
 
-// ADMIN CHECK
-const adminOnly = (req, res) => {
-  if (req.user.role !== "admin") {
-    res.status(403).json({ message: "Access denied" });
-    return false;
-  }
-  return true;
-};
-
-// GET PASSENGERS (SEARCH BY NAME)
+// GET passengers
 export const getPassengers = async (req, res) => {
-  if (!adminOnly(req, res)) return;
-
-  const search = req.query.search || "";
-
-  const result = await db.query(
-    `SELECT user_id, name, email, phone, is_verified
-     FROM users
-     WHERE role_id = 1
-     AND name ILIKE '%' || $1 || '%'
-     ORDER BY created_at DESC`,
-    [search]
+  const search = req.query.search ?? "";
+  const result = await pool.query(
+    `
+    SELECT user_id, name, email, phone, created_at
+    FROM users u
+    JOIN roles r ON u.role_id = r.role_id
+    WHERE r.role_name='passenger'
+      AND (LOWER(name) LIKE LOWER($1) OR LOWER(email) LIKE LOWER($1))
+    ORDER BY created_at DESC
+    `,
+    [`%${search}%`]
   );
-
   res.json(result.rows);
 };
 
-// ADD PASSENGER
-export const addPassenger = async (req, res) => {
-  if (!adminOnly(req, res)) return;
+// GET single passenger
+export const getPassengerById = async (req, res) => {
+  const { id } = req.params;
+  const result = await pool.query(
+    `SELECT user_id, name, email, phone, created_at FROM users WHERE user_id=$1`,
+    [id]
+  );
+  if (!result.rows.length) {
+    return res.status(404).json({ message: "Passenger not found" });
+  }
+  res.json(result.rows[0]);
+};
 
+// ADD passenger
+export const addPassenger = async (req, res) => {
   const { name, email, phone, password } = req.body;
+  const role = await pool.query(
+    "SELECT role_id FROM roles WHERE role_name='passenger'"
+  );
+
   const hash = await bcrypt.hash(password, 10);
 
-  await db.query(
-    `INSERT INTO users
-     (name, email, phone, password_hash, role_id, is_verified)
-     VALUES ($1,$2,$3,$4,1,true)`,
-    [name, email, phone, hash]
+  const result = await pool.query(
+    `
+    INSERT INTO users (name, email, phone, password_hash, role_id, is_verified)
+    VALUES ($1,$2,$3,$4,$5,true)
+    RETURNING user_id,name,email
+    `,
+    [name, email, phone, hash, role.rows[0].role_id]
   );
 
-  res.status(201).json({ message: "Passenger added" });
+  res.status(201).json(result.rows[0]);
 };
 
-// UPDATE PASSENGER
+// UPDATE passenger
 export const updatePassenger = async (req, res) => {
-  if (!adminOnly(req, res)) return;
+  try {
+    const { id } = req.params;
+    const { name, phone } = req.body;
 
-  const { id } = req.params;
-  const { name, email, phone } = req.body;
+    if (!name) {
+      return res.status(400).json({ message: "Name is required" });
+    }
 
-  await db.query(
-    `UPDATE users
-     SET name=$1, email=$2, phone=$3, updated_at=NOW()
-     WHERE user_id=$4 AND role_id=1`,
-    [name, email, phone, id]
-  );
+    const result = await pool.query(
+      `
+      UPDATE users
+      SET name = $1,
+          phone = $2,
+          updated_at = now()
+      WHERE user_id = $3
+      RETURNING user_id, name, email, phone
+      `,
+      [name, phone ?? null, id]
+    );
 
-  res.json({ message: "Passenger updated" });
+    if (!result.rows.length) {
+      return res.status(404).json({ message: "Passenger not found" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Update passenger error:", err);
+    res.status(500).json({ message: "Failed to update passenger" });
+  }
 };
 
-// DELETE PASSENGER
+// DELETE passenger
 export const deletePassenger = async (req, res) => {
-  if (!adminOnly(req, res)) return;
-
-  await db.query(
-    `DELETE FROM users
-     WHERE user_id=$1 AND role_id=1`,
-    [req.params.id]
-  );
-
+  const { id } = req.params;
+  await pool.query("DELETE FROM users WHERE user_id=$1", [id]);
   res.json({ message: "Passenger deleted" });
 };

@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-import 'token_store.dart'; // adjust path if needed
+import 'token_store.dart';
 
 class AdminApi {
-  // 🔗 Backend base URL
-  //static const String baseUrl = "http://10.0.2.2:4000";
-   static const String baseUrl = "http://localhost:4000";  //Chrome emulator local
+  // 🌐 Backend base URL
+  static const String baseUrl = "http://localhost:4000";
+  // Android emulator:
+  // static const String baseUrl = "http://10.0.2.2:4000";
 
   // =======================
   // AUTH HEADERS
@@ -25,6 +26,17 @@ class AdminApi {
   }
 
   // =======================
+  // SAFE JSON DECODE
+  // =======================
+  static dynamic _decode(http.Response res) {
+    try {
+      return jsonDecode(res.body);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // =======================
   // GET PASSENGERS (SEARCH)
   // GET /admin/passengers?search=
   // =======================
@@ -33,63 +45,130 @@ class AdminApi {
       "$baseUrl/admin/passengers?search=${Uri.encodeQueryComponent(search)}",
     );
 
-    final response = await http.get(uri, headers: await _headers());
+    final res = await http.get(uri, headers: await _headers());
 
-    if (response.statusCode == 401 || response.statusCode == 403) {
+    if (res.statusCode == 401 || res.statusCode == 403) {
       throw Exception("Access denied. Admin login required.");
     }
 
-    if (response.statusCode != 200) {
-      throw Exception(
-        "Failed to load passengers (${response.statusCode})",
-      );
+    if (res.statusCode != 200) {
+      throw Exception("Failed to load passengers (${res.statusCode})");
     }
 
-    return jsonDecode(response.body) as List<dynamic>;
+    final data = _decode(res);
+    return data is List ? data : [];
   }
 
   // =======================
-  // GET CUSTOMER DETAILS
+  // GET PASSENGER DETAILS
   // GET /admin/passengers/:id
   // =======================
-  static Future<Map<String, dynamic>> fetchCustomerDetails(int userId) async {
+  static Future<Map<String, dynamic>> fetchPassengerDetails(
+    int userId,
+  ) async {
     final uri = Uri.parse("$baseUrl/admin/passengers/$userId");
 
-    final response = await http.get(uri, headers: await _headers());
+    final res = await http.get(uri, headers: await _headers());
 
-    if (response.statusCode == 401 || response.statusCode == 403) {
+    if (res.statusCode == 401 || res.statusCode == 403) {
       throw Exception("Access denied. Admin login required.");
     }
 
-    if (response.statusCode != 200) {
-      throw Exception(
-        "Failed to load customer (${response.statusCode})",
-      );
+    if (res.statusCode != 200) {
+      throw Exception("Failed to load passenger (${res.statusCode})");
     }
 
-    return jsonDecode(response.body) as Map<String, dynamic>;
+    final data = _decode(res);
+    if (data is! Map<String, dynamic>) {
+      throw Exception("Invalid passenger data");
+    }
+
+    return data;
   }
 
   // =======================
-  // GET CUSTOMER BOOKINGS
+  // GET PASSENGER BOOKINGS
   // GET /admin/passengers/:id/bookings
   // =======================
-  static Future<List<dynamic>> fetchCustomerBookings(int userId) async {
+  static Future<List<dynamic>> fetchPassengerBookings(
+    int userId,
+  ) async {
     final uri =
         Uri.parse("$baseUrl/admin/passengers/$userId/bookings");
 
-    final response = await http.get(uri, headers: await _headers());
+    final res = await http.get(uri, headers: await _headers());
 
-    if (response.statusCode == 401 || response.statusCode == 403) {
+    if (res.statusCode == 401 || res.statusCode == 403) {
       throw Exception("Access denied. Admin login required.");
     }
 
-    if (response.statusCode != 200) {
-      throw Exception(
-        "Failed to load bookings (${response.statusCode})",
-      );
+    if (res.statusCode == 404) {
+      return []; // no bookings
     }
 
-    return jsonDecode(response.body) as List<dynamic>;
+    if (res.statusCode != 200) {
+      throw Exception("Failed to load bookings (${res.statusCode})");
+    }
+
+    final data = _decode(res);
+    return data is List ? data : [];
+  }
+
+  // =======================
+  // ADD PASSENGER
+  // POST /admin/passengers
+  // =======================
+  static Future<void> addPassenger(
+    Map<String, dynamic> data,
+  ) async {
+    final uri = Uri.parse("$baseUrl/admin/passengers");
+
+    final res = await http.post(
+      uri,
+      headers: await _headers(),
+      body: jsonEncode(data),
+    );
+
+    if (res.statusCode != 201) {
+      throw Exception("Failed to add passenger (${res.statusCode})");
+    }
+  }
+
+  // =======================
+  // UPDATE PASSENGER
+  // PUT /admin/passengers/:id
+  // =======================
+  static Future<void> updatePassenger(
+    int id,
+    Map<String, dynamic> data,
+  ) async {
+    final uri = Uri.parse("$baseUrl/admin/passengers/$id");
+
+    final res = await http.put(
+      uri,
+      headers: await _headers(),
+      body: jsonEncode(data),
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception("Failed to update passenger (${res.statusCode})");
+    }
+  }
+
+  // =======================
+  // DELETE PASSENGER
+  // DELETE /admin/passengers/:id
+  // =======================
+  static Future<void> deletePassenger(int id) async {
+    final uri = Uri.parse("$baseUrl/admin/passengers/$id");
+
+    final res = await http.delete(
+      uri,
+      headers: await _headers(),
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception("Failed to delete passenger (${res.statusCode})");
+    }
   }
 }

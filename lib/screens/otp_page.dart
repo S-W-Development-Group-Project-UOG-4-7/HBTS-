@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../services/auth_api.dart';
 import '../services/token_store.dart';
 import 'home_page.dart';
-import '../admin/dashboard.dart';
+import '/admin/dashboard.dart';
+import '../app_routes.dart';
+
 
 /// OTP flow types
 enum OtpFlow {
@@ -84,25 +86,34 @@ class _OtpScreenState extends State<OtpScreen> {
         }
       }
 
-      // =======================
-      // SAVE TOKENS & ROLE
-      // =======================
-      final accessToken = result["accessToken"];
-      final refreshToken = result["refreshToken"];
-      final role = result["role"];
+      // 🔐 Extract values
+      final accessToken = result["accessToken"] as String?;
+      final refreshToken = result["refreshToken"] as String?;
+      final rawRole = result["role"] as String?;
 
-      if (accessToken == null || refreshToken == null || role == null) {
+      if (accessToken == null || refreshToken == null || rawRole == null) {
         throw Exception("Invalid authentication response");
       }
 
+      // ✅ NORMALIZE ROLE (CRITICAL FIX)
+      final role = rawRole.toLowerCase().contains("admin")
+          ? "admin"
+          : "passenger";
+
+      // 🔐 SAVE TOKENS
       await TokenStore.saveTokens(
         accessToken: accessToken,
         refreshToken: refreshToken,
       );
+
+      // 🔐 SAVE NORMALIZED ROLE
       await TokenStore.saveRole(role);
 
-      // 🔍 DEBUG (can remove later)
-      await TokenStore.debugPrintTokens();
+      // 🔎 VERIFY TOKEN SAVED
+      final storedToken = await TokenStore.getAccessToken();
+      if (storedToken == null) {
+        throw Exception("Failed to save access token");
+      }
 
       if (!mounted) return;
 
@@ -110,18 +121,19 @@ class _OtpScreenState extends State<OtpScreen> {
       // ROLE-BASED NAVIGATION
       // =======================
       if (role == "admin") {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const AdminDashboard()),
-          (_) => false,
-        );
-      } else {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const HomePage()),
-          (_) => false,
-        );
-      }
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(builder: (_) => const AdminDashboard()),
+    (_) => false,
+  );
+} else {
+  Navigator.pushNamedAndRemoveUntil(
+    context,
+    AppRoutes.home,
+    (_) => false,
+  );
+}
+
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
