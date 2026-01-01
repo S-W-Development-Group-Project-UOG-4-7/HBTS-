@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class TrackMyBookingPage extends StatelessWidget {
-  const TrackMyBookingPage({Key? key}) : super(key: key);
+  const TrackMyBookingPage({super.key});
 
   @override
   Widget build(BuildContext context) {

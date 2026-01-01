@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TokenStore {
   // =======================
@@ -6,6 +8,8 @@ class TokenStore {
   // =======================
   static const FlutterSecureStorage _storage =
       FlutterSecureStorage();
+  static Future<SharedPreferences> get _prefs =>
+      SharedPreferences.getInstance();
 
   // =======================
   // STORAGE KEYS
@@ -18,14 +22,22 @@ class TokenStore {
   // ACCESS TOKEN
   // =======================
   static Future<String?> getAccessToken() async {
-    return await _storage.read(key: _accessTokenKey);
+    final secure = await _storage.read(key: _accessTokenKey);
+    if (secure != null && secure.isNotEmpty) return secure;
+
+    final prefs = await _prefs;
+    return prefs.getString(_accessTokenKey);
   }
 
   // =======================
   // REFRESH TOKEN
   // =======================
   static Future<String?> getRefreshToken() async {
-    return await _storage.read(key: _refreshTokenKey);
+    final secure = await _storage.read(key: _refreshTokenKey);
+    if (secure != null && secure.isNotEmpty) return secure;
+
+    final prefs = await _prefs;
+    return prefs.getString(_refreshTokenKey);
   }
 
   // =======================
@@ -44,6 +56,21 @@ class TokenStore {
       key: _refreshTokenKey,
       value: refreshToken,
     );
+
+    final prefs = await _prefs;
+    await prefs.setString(_accessTokenKey, accessToken);
+    await prefs.setString(_refreshTokenKey, refreshToken);
+  }
+
+  // Convenience for single-token flows (keeps older callers working)
+  static Future<void> saveToken(String accessToken) async {
+    await _storage.write(
+      key: _accessTokenKey,
+      value: accessToken,
+    );
+
+    final prefs = await _prefs;
+    await prefs.setString(_accessTokenKey, accessToken);
   }
 
   // =======================
@@ -56,10 +83,17 @@ class TokenStore {
       key: _roleKey,
       value: roleValue,
     );
+
+    final prefs = await _prefs;
+    await prefs.setString(_roleKey, roleValue);
   }
 
   static Future<String?> getRole() async {
-    return await _storage.read(key: _roleKey);
+    final secure = await _storage.read(key: _roleKey);
+    if (secure != null && secure.isNotEmpty) return secure;
+
+    final prefs = await _prefs;
+    return prefs.getString(_roleKey);
   }
 
   /// Admin role check (string OR role_id supported)
@@ -87,9 +121,9 @@ class TokenStore {
     final refresh = await getRefreshToken();
     final role = await getRole();
 
-    print("🔐 ACCESS TOKEN: ${access != null ? 'EXISTS' : 'NULL'}");
-    print("🔄 REFRESH TOKEN: ${refresh != null ? 'EXISTS' : 'NULL'}");
-    print("👤 ROLE: $role");
+    debugPrint("🔐 ACCESS TOKEN: ${access != null ? 'EXISTS' : 'NULL'}");
+    debugPrint("🔄 REFRESH TOKEN: ${refresh != null ? 'EXISTS' : 'NULL'}");
+    debugPrint("👤 ROLE: $role");
   }
 
   // =======================
@@ -99,5 +133,10 @@ class TokenStore {
     await _storage.delete(key: _accessTokenKey);
     await _storage.delete(key: _refreshTokenKey);
     await _storage.delete(key: _roleKey);
+
+    final prefs = await _prefs;
+    await prefs.remove(_accessTokenKey);
+    await prefs.remove(_refreshTokenKey);
+    await prefs.remove(_roleKey);
   }
 }
