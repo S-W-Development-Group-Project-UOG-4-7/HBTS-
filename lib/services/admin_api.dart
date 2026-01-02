@@ -5,9 +5,9 @@ import 'token_store.dart';
 
 class AdminApi {
   // 🌐 Backend base URL
-  static const String baseUrl = "http://localhost:4000";
+  static const String baseUrl = "http://localhost:4000/api";
   // Android emulator:
-  // static const String baseUrl = "http://10.0.2.2:4000";
+  // static const String baseUrl = "http://10.0.2.2:4000/api";
 
   // =======================
   // AUTH HEADERS

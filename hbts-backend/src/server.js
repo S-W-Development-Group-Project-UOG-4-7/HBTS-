@@ -34,25 +34,20 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/seat-selection", seatSelectionRoutes);
 
 // =======================
-// OPERATOR ROUTES
+// OPERATOR ROUTES (✅ make consistent)
 // =======================
-app.use("/operator/buses", operatorBusesRoutes);
-app.use("/operator/drivers", operatorDriversRoutes);
-app.use("/operator/trips", operatorTripsRoutes);
-app.use("/operator/platforms", platformAllocationRoutes);
-app.use("/operator/tickets", ticketValidationRoutes);
-app.use("/operator", operatorRoutes);
+app.use("/api/operator/buses", operatorBusesRoutes);
+app.use("/api/operator/drivers", operatorDriversRoutes);
+app.use("/api/operator/trips", operatorTripsRoutes);
+app.use("/api/operator/platforms", platformAllocationRoutes);
+app.use("/api/operator/tickets", ticketValidationRoutes);
+app.use("/api/operator", operatorRoutes);
 
 // =======================
 // HEALTH CHECKS
 // =======================
-app.get("/health", (req, res) => {
-  res.json({ ok: true });
-});
-
-app.get("/", (req, res) => {
-  res.send("HBTS Backend is running 🚀");
-});
+app.get("/health", (req, res) => res.json({ ok: true }));
+app.get("/", (req, res) => res.send("HBTS Backend is running 🚀"));
 
 // =======================
 // START SERVER

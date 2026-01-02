@@ -4,7 +4,7 @@ import '../config.dart';
 
 class AuthApi {
   // Helper to build URLs
-  static Uri _u(String path) => Uri.parse("${AppConfig.baseUrl}$path");
+  static Uri _u(String path) => Uri.parse("${AppConfig.baseUrl}/api$path");
 
   // Safe JSON decode
   static Map<String, dynamic> _decode(http.Response res) {

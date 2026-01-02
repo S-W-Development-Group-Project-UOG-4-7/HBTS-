@@ -1,12 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../../../config.dart';
 import 'utils/operator_session.dart'; // ✅ correct for your folder structure
 
 
 class OperatorApi {
-  static const String baseUrl = "http://10.0.2.2:8000";
-
-  static Uri _uri(String path) => Uri.parse("$baseUrl$path");
+  static Uri _uri(String path) => Uri.parse("${AppConfig.baseUrl}/api$path");
 
   static String _body(http.Response res) => utf8.decode(res.bodyBytes);
 
