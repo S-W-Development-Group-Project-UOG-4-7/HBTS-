@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(psql:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(node server.js:*)",
+      "Bash(cd /Users/gavinkahanda/Desktop/New/Frontend/lib && grep:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(flutter doctor:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
