@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class DriverTripsPage extends StatefulWidget {
+  const DriverTripsPage({super.key});
+
   @override
   _DriverTripsPageState createState() => _DriverTripsPageState();
 }

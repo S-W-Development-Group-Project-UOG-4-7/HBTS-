@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 
+<<<<<<< HEAD
+class TrackMyBookingPage extends StatelessWidget {
+  const TrackMyBookingPage({super.key});
+=======
 
 import '../services/booking_api.dart';
 import '../services/tracking_socket_service.dart';
@@ -125,6 +129,7 @@ class _TrackMyBookingPageState extends State<TrackMyBookingPage> {
     _socket.close();
     super.dispose();
   }
+>>>>>>> 07412e1203042fbfa2a74db4f898a950bbd6509e
 
   @override
   Widget build(BuildContext context) {

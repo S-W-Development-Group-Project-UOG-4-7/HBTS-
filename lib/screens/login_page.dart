@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+
 import 'signup_page.dart';
 import '../services/auth_api.dart';
 import '../services/token_store.dart';
 import 'otp_page.dart';
 import 'home_page.dart';
 import '../admin/dashboard.dart';
+
+// ✅ operator imports
+import '../operator/operator_start_page.dart';
+import '../operator/pages/services/operator_api.dart';
+import '../operator/pages/services/utils/operator_session.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -17,9 +23,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _passwordFocus = FocusNode();
 
   bool _obscurePassword = true;
   bool _isLoading = false;
+
+  // ✅ NEW: operator toggle
+  bool _loginAsOperator = false;
 
   @override
   void initState() {
@@ -34,26 +44,37 @@ class _LoginScreenState extends State<LoginScreen> {
     final loggedIn = await TokenStore.isLoggedIn();
     if (!loggedIn) return;
 
-    final isAdmin = await TokenStore.isAdmin();
+    final role = await TokenStore.getRole();
     if (!mounted) return;
 
-    if (isAdmin) {
+    if (role == "admin") {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const AdminDashboard()),
       );
-    } else {
+      return;
+    }
+
+    if (role == "operator") {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const HomePage()),
+        MaterialPageRoute(builder: (_) => const OperatorStartPage()),
       );
+      return;
     }
+
+    // default user/passenger
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const HomePage()),
+    );
   }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _passwordFocus.dispose();
     super.dispose();
   }
 
@@ -66,24 +87,84 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
+<<<<<<< HEAD
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+
+      // ✅ OPERATOR LOGIN (no OTP, token comes directly)
+      if (_loginAsOperator) {
+        final result = await OperatorApi.login(email: email, password: password);
+
+        final token = result["token"]?.toString();
+        final operator = (result["operator"] is Map)
+            ? Map<String, dynamic>.from(result["operator"] as Map)
+            : null;
+
+        if (token == null || operator == null) {
+          throw Exception("Invalid operator login response from server");
+        }
+
+        final operatorId = int.tryParse(operator["id"]?.toString() ?? "");
+        if (operatorId == null) {
+          throw Exception("Operator id missing/invalid in response");
+        }
+
+        // save session in memory (your existing code uses this)
+        OperatorSession.token = token;
+        OperatorSession.operatorId = operatorId;
+        OperatorSession.operatorName = operator["name"]?.toString();
+
+        // ✅ save to TokenStore so main.dart routing works
+        await TokenStore.saveToken(token);
+        await TokenStore.saveRole("operator");
+
+        if (!mounted) return;
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const OperatorStartPage()),
+        );
+        return;
+      }
+
+      // =======================
+      // PASSENGER / ADMIN LOGIN (OTP FLOW)
+      // =======================
+      final result = await AuthApi.login(
+        email: email,
+        password: password,
+=======
       final result = await AuthApi.unifiedLogin(
         identifier: _emailController.text.trim(), // email OR phone
         password: _passwordController.text,
+>>>>>>> 07412e1203042fbfa2a74db4f898a950bbd6509e
       );
 
       final tempToken = result["tempToken"] as String?;
       final challengeIdRaw = result["challengeId"];
+<<<<<<< HEAD
+      final int challengeId = int.parse(challengeIdRaw.toString());
+      final role = result["role"]; // "admin" or passenger
+
+      if (tempToken == null || role == null) {
+=======
       final int? challengeId = int.tryParse(challengeIdRaw.toString());
 
       if (tempToken == null || challengeId == null) {
+>>>>>>> 07412e1203042fbfa2a74db4f898a950bbd6509e
         throw Exception("Invalid response from server");
       }
 
       if (!mounted) return;
 
+<<<<<<< HEAD
+      final otpFlow =
+          role == "admin" ? OtpFlow.adminLogin2fa : OtpFlow.passengerLogin2fa;
+=======
       // Unified login uses a single OTP flow
       final otpFlow = OtpFlow.login2fa;
 
+>>>>>>> 07412e1203042fbfa2a74db4f898a950bbd6509e
 
       Navigator.push(
         context,
@@ -153,7 +234,39 @@ class _LoginScreenState extends State<LoginScreen> {
                         color: Colors.grey.shade600,
                       ),
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 24),
+
+                    // ✅ NEW: Operator toggle
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.business, color: Colors.blue.shade700),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Text(
+                              "Login as Operator",
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          Switch(
+                            value: _loginAsOperator,
+                            onChanged: _isLoading
+                                ? null
+                                : (v) => setState(() => _loginAsOperator = v),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
 
                     // =======================
                     // EMAIL
@@ -161,6 +274,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      onFieldSubmitted: (_) {
+                        FocusScope.of(context).requestFocus(_passwordFocus);
+                      },
                       decoration: InputDecoration(
                         labelText: 'Email',
                         prefixIcon: Icon(
@@ -203,7 +320,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     // =======================
                     TextFormField(
                       controller: _passwordController,
+                      focusNode: _passwordFocus,
                       obscureText: _obscurePassword,
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) {
+                        if (_isLoading) return;
+                        _handleLogin();
+                      },
                       decoration: InputDecoration(
                         labelText: 'Password',
                         prefixIcon: Icon(
@@ -217,9 +340,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 : Icons.visibility_off_outlined,
                           ),
                           onPressed: () {
-                            setState(
-                              () => _obscurePassword = !_obscurePassword,
-                            );
+                            setState(() => _obscurePassword = !_obscurePassword);
                           },
                         ),
                         filled: true,
@@ -258,12 +379,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         child: _isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.white,
-                              )
-                            : const Text(
-                                'Login',
-                                style: TextStyle(
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : Text(
+                                _loginAsOperator ? 'Login (Operator)' : 'Login',
+                                style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                 ),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'driver_trips.dart';
 
 class DriverDashboard extends StatelessWidget {
+  const DriverDashboard({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

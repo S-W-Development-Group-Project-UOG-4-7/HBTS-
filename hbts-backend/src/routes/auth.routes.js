@@ -5,11 +5,13 @@ import {
   passengerLogin,
   passengerVerifyLoginOtp,
   adminLogin,
-  adminVerifyLoginOtp
+  adminVerifyLoginOtp,
 } from "../controllers/auth.controller.js";
-import { requireTempToken } from "../middleware/tempAuth.js";
+import { requireTempToken } from "../middleware/tempAuth.middleware.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
 import { getMe } from "../controllers/me.controller.js";
+<<<<<<< HEAD
+=======
 
 <<<<<<< HEAD
 =======
@@ -21,6 +23,7 @@ import {
 
 >>>>>>> pasindu
 
+>>>>>>> 07412e1203042fbfa2a74db4f898a950bbd6509e
 const router = Router();
 
 // NEW unified login
@@ -36,19 +39,13 @@ router.post(
 router.post("/passenger/signup", passengerSignup);
 router.post("/passenger/signup/verify-otp", passengerVerifySignupOtp);
 router.post("/passenger/login", passengerLogin);
-router.post(
-  "/passenger/login/verify-otp",
-  requireTempToken,
-  passengerVerifyLoginOtp
-);
+router.post("/passenger/login/verify-otp", requireTempToken, passengerVerifyLoginOtp);
 
 // ADMIN ROUTES
 router.post("/admin/login", adminLogin);
-router.post(
-  "/admin/login/verify-otp",
-  requireTempToken,
-  adminVerifyLoginOtp
-);
+router.post("/admin/login/verify-otp", requireTempToken, adminVerifyLoginOtp);
+
+// CURRENT USER
 router.get("/me", requireAuth, getMe);
  
 

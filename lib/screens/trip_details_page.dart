@@ -57,7 +57,7 @@ class TripDetailsPage extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Text("Duration: ${durMins} mins", style: const TextStyle(fontWeight: FontWeight.w800)),
+                  Text("Duration: $durMins mins", style: const TextStyle(fontWeight: FontWeight.w800)),
                   const SizedBox(height: 8),
                   Text("Capacity: ${t.capacity}",
                       style: TextStyle(fontWeight: FontWeight.w800, color: Colors.green.shade700)),

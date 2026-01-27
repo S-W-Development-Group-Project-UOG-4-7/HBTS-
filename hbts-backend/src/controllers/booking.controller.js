@@ -61,7 +61,7 @@ export async function createBooking(req, res) {
     }
 
     const trip = tripRes.rows[0];
-    const tripStatus = String(trip.status);
+    const tripStatus = String(trip.status || "").toLowerCase();
 
     // Not bookable states
     if (["cancelled", "completed"].includes(tripStatus)) {
@@ -69,10 +69,10 @@ export async function createBooking(req, res) {
       return res.status(400).json({ message: "Trip is not bookable" });
     }
 
-    // Running trips not bookable (even if time window would allow)
-    if (tripStatus !== "scheduled") {
+    // Booking is only allowed when the bus is parked
+    if (tripStatus !== "parked") {
       await client.query("ROLLBACK");
-      return res.status(400).json({ message: "Booking closed (trip started)" });
+      return res.status(400).json({ message: "Booking allowed only when the bus is parked" });
     }
 
     // Flexible time rule:

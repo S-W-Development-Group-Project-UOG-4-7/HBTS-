@@ -1,7 +1,7 @@
 import pg from "pg";
-import dotenv from "dotenv";
+import { loadEnv } from "./utils/env.js";
 
-dotenv.config();
+loadEnv();
 
 console.log("DATABASE_URL (backend):", process.env.DATABASE_URL);
 export const pool = new pg.Pool({
