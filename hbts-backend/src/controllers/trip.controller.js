@@ -1,6 +1,8 @@
 // src/controllers/trip.controller.js
 import { pool } from "../db.js";
 import { expirePendingBookingsOnce } from "../jobs/expirePendingBookings.job.js";
+import { broadcastTripLocation } from "../ws/tracking.ws.js";
+
 
 const TTL_MINUTES = Number(process.env.PENDING_TTL_MINUTES || 10);
 
@@ -140,6 +142,82 @@ export async function getTripSeats(req, res) {
     return res.json(seats.rows);
   } catch (err) {
     console.error("getTripSeats error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+export async function pushTripLocation(req, res) {
+  try {
+    const tripId = Number(req.params.id);
+    if (!tripId) return res.status(400).json({ message: "Invalid trip id" });
+
+    // Role check (tune based on how your JWT stores role)
+    const role = req.user?.role;
+    const isStaff =
+      role === "admin" || role === "operator" || role === "driver" || role === "2";
+
+    if (!isStaff) return res.status(403).json({ message: "Forbidden" });
+
+    const { lat, lon, speedMps, heading, gpsAt } = req.body;
+    if (lat == null || lon == null) {
+      return res.status(400).json({ message: "lat and lon are required" });
+    }
+
+    const latNum = Number(lat);
+    const lonNum = Number(lon);
+    if (!Number.isFinite(latNum) || !Number.isFinite(lonNum)) {
+      return res.status(400).json({ message: "lat/lon must be numbers" });
+    }
+
+    const t = await pool.query(`SELECT trip_id, status FROM trips WHERE trip_id = $1`, [tripId]);
+    if (t.rowCount === 0) return res.status(404).json({ message: "Trip not found" });
+
+    const tripStatus = String(t.rows[0].status);
+    if (["cancelled", "completed"].includes(tripStatus)) {
+      return res.status(400).json({ message: "Trip is not trackable" });
+    }
+
+    const gpsAtTs = gpsAt ? new Date(gpsAt) : new Date();
+
+    const up = await pool.query(
+      `
+      INSERT INTO trip_live (trip_id, lat, lon, speed_mps, heading, gps_at, updated_at)
+      VALUES ($1,$2,$3,$4,$5,$6,NOW())
+      ON CONFLICT (trip_id)
+      DO UPDATE SET
+        lat = EXCLUDED.lat,
+        lon = EXCLUDED.lon,
+        speed_mps = EXCLUDED.speed_mps,
+        heading = EXCLUDED.heading,
+        gps_at = EXCLUDED.gps_at,
+        updated_at = NOW()
+      RETURNING trip_id, lat, lon, speed_mps, heading, gps_at, updated_at
+      `,
+      [
+        tripId,
+        latNum,
+        lonNum,
+        speedMps != null ? Number(speedMps) : null,
+        heading != null ? Number(heading) : null,
+        gpsAtTs,
+      ]
+    );
+
+    const loc = up.rows[0];
+
+    await broadcastTripLocation(tripId, {
+      trip_id: Number(loc.trip_id),
+      lat: Number(loc.lat),
+      lon: Number(loc.lon),
+      speed_mps: loc.speed_mps != null ? Number(loc.speed_mps) : null,
+      heading: loc.heading != null ? Number(loc.heading) : null,
+      gps_at: loc.gps_at,
+      updated_at: loc.updated_at,
+    });
+
+    return res.json({ ok: true, location: loc });
+  } catch (err) {
+    console.error("pushTripLocation error:", err);
     return res.status(500).json({ message: "Server error" });
   }
 }

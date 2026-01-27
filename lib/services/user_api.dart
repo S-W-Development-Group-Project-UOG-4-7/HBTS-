@@ -5,12 +5,14 @@ import 'package:http/http.dart' as http;
 import '../models/user_model.dart';
 import '../config.dart';
 import 'token_store.dart';
+import '../config.dart'; // ✅ ADD (update path if needed)
 
 class UserApi {
   static const String profileEndpoint = "/api/auth/me";
 
   static Future<AppUser> fetchLoggedInUser() async {
     final token = await TokenStore.getAccessToken();
+    final baseUrl = AppConfig.baseUrl; // ✅ use config
 
     print(
       "ME CALL => ${AppConfig.baseUrl}$profileEndpoint | token=${token == null ? 'null' : 'present'}",
@@ -24,7 +26,11 @@ class UserApi {
             "Content-Type": "application/json",
           },
         )
+<<<<<<< HEAD
         .timeout(const Duration(seconds: 10)); // prevents infinite loading
+=======
+        .timeout(const Duration(seconds: 10));
+>>>>>>> 07412e1203042fbfa2a74db4f898a950bbd6509e
 
     print("ME RESP => ${res.statusCode} | ${res.body}");
 

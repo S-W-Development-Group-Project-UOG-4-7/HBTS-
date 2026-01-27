@@ -11,7 +11,8 @@ export function requireTempToken(req, res, next) {
     if (payload.type !== "TEMP_2FA") {
       return res.status(401).json({ message: "Invalid token type" });
     }
-    req.userId = payload.sub;
+    req.userId = payload.userId;
+
     next();
   } catch {
     return res.status(401).json({ message: "Invalid or expired token" });

@@ -2,7 +2,7 @@ import { pool } from "../db.js";
 
 export async function getMe(req, res) {
   try {
-    const userId = req.user?.id;
+    const userId = req.user.user_id;
     if (!userId) return res.status(401).json({ message: "Unauthenticated" });
 
     const { rows } = await pool.query(

@@ -6,10 +6,8 @@ class TokenStore {
   // =======================
   // SECURE STORAGE INSTANCE
   // =======================
-  static const FlutterSecureStorage _storage =
-      FlutterSecureStorage();
-  static Future<SharedPreferences> get _prefs =>
-      SharedPreferences.getInstance();
+  static const FlutterSecureStorage _storage = FlutterSecureStorage();
+  static Future<SharedPreferences> get _prefs => SharedPreferences.getInstance();
 
   // =======================
   // STORAGE KEYS
@@ -47,15 +45,8 @@ class TokenStore {
     required String accessToken,
     required String refreshToken,
   }) async {
-    await _storage.write(
-      key: _accessTokenKey,
-      value: accessToken,
-    );
-
-    await _storage.write(
-      key: _refreshTokenKey,
-      value: refreshToken,
-    );
+    await _storage.write(key: _accessTokenKey, value: accessToken);
+    await _storage.write(key: _refreshTokenKey, value: refreshToken);
 
     final prefs = await _prefs;
     await prefs.setString(_accessTokenKey, accessToken);
@@ -64,10 +55,7 @@ class TokenStore {
 
   // Convenience for single-token flows (keeps older callers working)
   static Future<void> saveToken(String accessToken) async {
-    await _storage.write(
-      key: _accessTokenKey,
-      value: accessToken,
-    );
+    await _storage.write(key: _accessTokenKey, value: accessToken);
 
     final prefs = await _prefs;
     await prefs.setString(_accessTokenKey, accessToken);
@@ -76,13 +64,11 @@ class TokenStore {
   // =======================
   // ROLE HANDLING (SAFE)
   // =======================
-  /// Accepts "admin", "passenger" OR numeric role_id (2, 1, etc.)
+  /// Accepts role name ("admin", "passenger", "operator", "driver")
+  /// OR numeric role_id as string/int (e.g., 2, "2")
   static Future<void> saveRole(dynamic role) async {
     final roleValue = role.toString();
-    await _storage.write(
-      key: _roleKey,
-      value: roleValue,
-    );
+    await _storage.write(key: _roleKey, value: roleValue);
 
     final prefs = await _prefs;
     await prefs.setString(_roleKey, roleValue);
@@ -99,10 +85,29 @@ class TokenStore {
   /// Admin role check (string OR role_id supported)
   static Future<bool> isAdmin() async {
     final role = await getRole();
-
     if (role == null) return false;
 
+    // keep role_id check only if your DB uses 2 for admin (as you had)
     return role == "admin" || role == "2";
+  }
+
+  /// Staff roles check (admin/operator/driver)
+  static Future<bool> isStaff() async {
+    final role = await getRole();
+    if (role == null) return false;
+
+    return role == "admin" ||
+        role == "operator" ||
+        role == "driver" ||
+        // optional numeric role_ids if you ever store them
+        role == "2";
+  }
+
+  static Future<bool> isPassenger() async {
+    final role = await getRole();
+    if (role == null) return false;
+
+    return role == "passenger";
   }
 
   // =======================
