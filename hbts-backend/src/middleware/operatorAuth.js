@@ -9,7 +9,12 @@ export function operatorAuth(req, res, next) {
       return res.status(401).json({ message: "Missing Authorization token" });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const jwtSecret = process.env.JWT_SECRET || process.env.JWT_ACCESS_SECRET;
+    if (!jwtSecret) {
+      return res.status(500).json({ message: "JWT secret not configured" });
+    }
+
+    const decoded = jwt.verify(token, jwtSecret);
 
     // ✅ Must exist in token payload from /operator/login
     const operatorId = decoded.operator_id;

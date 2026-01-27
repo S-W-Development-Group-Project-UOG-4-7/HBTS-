@@ -21,7 +21,11 @@ export const requireAuth = (req, res, next) => {
 
     // 3️⃣ Attach user info to request
     // decoded MUST contain: userId, role
-    req.user = decoded;
+    req.user = {
+      ...decoded,
+      id: decoded.id ?? decoded.userId,
+      userId: decoded.userId ?? decoded.id,
+    };
 
     next();
   } catch (err) {

@@ -51,6 +51,38 @@ async function buildUpdate(table, columnValueMap) {
   return { sets, values };
 }
 
+function _parseDate(value) {
+  if (!value) return null;
+  const text = String(value).trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return null;
+  return text;
+}
+
+function _resolveRange(query) {
+  const fromRaw = query.from ?? query.start ?? query.startDate;
+  const toRaw = query.to ?? query.end ?? query.endDate;
+
+  if (!fromRaw && !toRaw) {
+    return { hasRange: false };
+  }
+
+  const from = _parseDate(fromRaw);
+  const to = _parseDate(toRaw);
+
+  if (!from && !to) {
+    return { error: "from/to must be YYYY-MM-DD" };
+  }
+
+  const start = from || to;
+  const end = to || from;
+
+  if (start > end) {
+    return { error: "from must be before or equal to to" };
+  }
+
+  return { hasRange: true, start, end };
+}
+
 async function ensureOwned(table, idColumn, id, operatorId) {
   const { rows } = await pool.query(
     `
@@ -127,8 +159,79 @@ router.get("/:tripId", async (req, res) => {
 // View assigned trips (filter by driverId or busId)
 router.get("/assigned/all", async (req, res) => {
   try {
+    const driverColumns = await getColumns("drivers");
+    const busColumns = await getColumns("buses");
+    const routeColumns = await getColumns("routes");
+    const tripColumns = await getColumns("trips");
+
+    const driverNameCol = driverColumns.has("name")
+      ? "name"
+      : driverColumns.has("driver_name")
+        ? "driver_name"
+        : driverColumns.has("full_name")
+          ? "full_name"
+          : null;
+
+    const busPlateCol = busColumns.has("license_plate_no")
+      ? "license_plate_no"
+      : busColumns.has("plate_no")
+        ? "plate_no"
+        : busColumns.has("license_no")
+          ? "license_no"
+          : null;
+
+    const routeNameCol = routeColumns.has("route_name")
+      ? "route_name"
+      : routeColumns.has("name")
+        ? "name"
+        : null;
+
+    const routeFromCol = routeColumns.has("from_location")
+      ? "from_location"
+      : routeColumns.has("origin")
+        ? "origin"
+        : null;
+
+    const routeToCol = routeColumns.has("to_location")
+      ? "to_location"
+      : routeColumns.has("destination")
+        ? "destination"
+        : null;
+
+    const busPlateSelect = busPlateCol
+      ? `b.${busPlateCol} AS license_plate_no`
+      : "NULL AS license_plate_no";
+    const driverNameSelect = driverNameCol
+      ? `d.${driverNameCol} AS driver_name`
+      : "NULL AS driver_name";
+    const routeNameSelect = routeNameCol
+      ? `r.${routeNameCol} AS route_name`
+      : "NULL AS route_name";
+    const routeFromSelect = routeFromCol
+      ? `r.${routeFromCol} AS from_location`
+      : "NULL AS from_location";
+    const routeToSelect = routeToCol
+      ? `r.${routeToCol} AS to_location`
+      : "NULL AS to_location";
+
     const filters = ["t.operator_id = $1"];
     const params = [req.operatorId];
+
+    const statusRaw = req.query.status;
+    if (statusRaw !== undefined && statusRaw !== null && String(statusRaw).trim() !== "") {
+      params.push(String(statusRaw));
+      filters.push(`LOWER(t.status) = LOWER($${params.length})`);
+    }
+
+    const range = _resolveRange(req.query || {});
+    if (range.error) {
+      return res.status(400).json({ message: range.error });
+    }
+
+    if (range.hasRange && tripColumns.has("trip_date")) {
+      params.push(range.start, range.end);
+      filters.push(`t.trip_date >= $${params.length - 1}::date AND t.trip_date <= $${params.length}::date`);
+    }
 
     const driverIdRaw = req.query.driverId || req.query.driver_id;
     const busIdRaw = req.query.busId || req.query.bus_id;
@@ -155,11 +258,11 @@ router.get("/assigned/all", async (req, res) => {
       `
       SELECT
         t.*,
-        b.license_plate_no,
-        d.name AS driver_name,
-        r.route_name,
-        r.from_location,
-        r.to_location
+        ${busPlateSelect},
+        ${driverNameSelect},
+        ${routeNameSelect},
+        ${routeFromSelect},
+        ${routeToSelect}
       FROM trips t
       LEFT JOIN buses b   ON b.bus_id = t.bus_id
       LEFT JOIN drivers d ON d.driver_id = t.driver_id

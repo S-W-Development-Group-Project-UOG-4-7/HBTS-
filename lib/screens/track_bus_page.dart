@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class TrackBusPage extends StatelessWidget {
-  const TrackBusPage({Key? key}) : super(key: key);
+  const TrackBusPage({super.key});
 
   @override
   Widget build(BuildContext context) {

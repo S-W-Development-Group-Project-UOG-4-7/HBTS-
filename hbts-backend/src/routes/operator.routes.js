@@ -93,12 +93,55 @@ async function ensureOwned(kind, id, operatorId) {
   return Boolean(found);
 }
 
+async function ensureOperatorsTable() {
+  await pool.query(
+    `
+    CREATE TABLE IF NOT EXISTS operators (
+      operator_id SERIAL PRIMARY KEY,
+      name TEXT,
+      email TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+    `
+  );
+}
+
+async function seedOperatorIfConfigured() {
+  const emailRaw = process.env.OPERATOR_SEED_EMAIL;
+  const passwordRaw = process.env.OPERATOR_SEED_PASSWORD;
+  const nameRaw = process.env.OPERATOR_SEED_NAME;
+
+  if (!emailRaw || !passwordRaw) return;
+
+  const email = emailRaw.trim().toLowerCase();
+  const passwordHash = await bcrypt.hash(passwordRaw, 10);
+
+  const { rows } = await pool.query(
+    `SELECT operator_id FROM operators WHERE email = $1 LIMIT 1`,
+    [email]
+  );
+
+  if (rows.length) return;
+
+  await pool.query(
+    `
+    INSERT INTO operators (name, email, password_hash)
+    VALUES ($1, $2, $3)
+    `,
+    [nameRaw || "Operator", email, passwordHash]
+  );
+}
+
 /**
  * POST /operator/login
  * Body: { email, password }
  */
 router.post("/login", async (req, res) => {
   try {
+    await ensureOperatorsTable();
+    await seedOperatorIfConfigured();
+
     const { email, password } = req.body || {};
     if (!email || !password) {
       return res.status(400).json({ message: "Missing email/password" });
@@ -129,6 +172,11 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    const jwtSecret = process.env.JWT_SECRET || process.env.JWT_ACCESS_SECRET;
+    if (!jwtSecret) {
+      return res.status(500).json({ message: "JWT secret not configured" });
+    }
+
     const token = jwt.sign(
       {
         operator_id: op.operator_id,
@@ -136,7 +184,7 @@ router.post("/login", async (req, res) => {
         name: op.name,
         role: "operator",
       },
-      process.env.JWT_SECRET,
+      jwtSecret,
       { expiresIn: "7d" }
     );
 

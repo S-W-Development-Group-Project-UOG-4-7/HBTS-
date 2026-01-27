@@ -4,6 +4,30 @@ import { operatorAuth } from "../middleware/operatorAuth.js";
 
 const router = express.Router();
 
+const COLUMN_CACHE = {};
+
+async function getColumns(table) {
+  if (COLUMN_CACHE[table]) return COLUMN_CACHE[table];
+  const { rows } = await pool.query(
+    `
+    SELECT column_name
+    FROM information_schema.columns
+    WHERE table_name = $1
+    `,
+    [table]
+  );
+  const set = new Set(rows.map((r) => r.column_name));
+  COLUMN_CACHE[table] = set;
+  return set;
+}
+
+function pickColumn(columns, candidates) {
+  for (const candidate of candidates) {
+    if (columns.has(candidate)) return candidate;
+  }
+  return null;
+}
+
 // All ticket validation routes require an operator token
 router.use(operatorAuth);
 
@@ -16,6 +40,24 @@ router.use(operatorAuth);
 router.post("/validate", async (req, res) => {
   try {
     const { bookingId, qrCode } = req.body || {};
+
+    const routeColumns = await getColumns("routes");
+    const seatColumns = await getColumns("seats");
+    const userColumns = await getColumns("users");
+
+    const routeNameCol = pickColumn(routeColumns, ["route_name", "name"]);
+    const routeFromCol = pickColumn(routeColumns, ["from_location", "origin", "from"]);
+    const routeToCol = pickColumn(routeColumns, ["to_location", "destination", "to"]);
+    const seatLabelCol = pickColumn(seatColumns, ["seat_label", "seat_no", "seat_number"]);
+    const userNameCol = pickColumn(userColumns, ["name", "full_name"]);
+    const userEmailCol = pickColumn(userColumns, ["email"]);
+
+    const routeNameSelect = routeNameCol ? `r.${routeNameCol} AS route_name` : "NULL AS route_name";
+    const routeFromSelect = routeFromCol ? `r.${routeFromCol} AS from_location` : "NULL AS from_location";
+    const routeToSelect = routeToCol ? `r.${routeToCol} AS to_location` : "NULL AS to_location";
+    const seatLabelSelect = seatLabelCol ? `s.${seatLabelCol} AS seat_label` : "NULL AS seat_label";
+    const userNameSelect = userNameCol ? `u.${userNameCol} AS passenger_name` : "NULL AS passenger_name";
+    const userEmailSelect = userEmailCol ? `u.${userEmailCol} AS passenger_email` : "NULL AS passenger_email";
 
     const filters = [];
     const params = [req.operatorId];
@@ -56,13 +98,13 @@ router.post("/validate", async (req, res) => {
         t.operator_id,
         t.bus_id,
         t.driver_id,
-        r.route_name,
-        r.from_location,
-        r.to_location,
-        s.seat_label,
+        ${routeNameSelect},
+        ${routeFromSelect},
+        ${routeToSelect},
+        ${seatLabelSelect},
         u.user_id         AS passenger_id,
-        u.name            AS passenger_name,
-        u.email           AS passenger_email
+        ${userNameSelect},
+        ${userEmailSelect}
       FROM bookings b
       JOIN trips   t ON t.trip_id = b.trip_id
       JOIN routes  r ON r.route_id = t.route_id

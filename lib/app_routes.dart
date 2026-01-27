@@ -7,6 +7,7 @@ import 'screens/schedule_page.dart';
 import 'screens/my_bookings_page.dart';
 import 'screens/track_my_booking_page.dart';
 import 'screens/track_bus_page.dart';
+import 'operator/operator_start_page.dart';
 
 import 'screens/trip_details_page.dart';
 import 'screens/seat_selection_page.dart';
@@ -17,6 +18,7 @@ class AppRoutes {
   static const login = '/login';
   static const home = '/home';
   static const profile = '/profile';
+  static const operator = '/operator';
   static const schedule = '/schedule';
   static const myBookings = '/my-bookings';
   static const trackMyBooking = '/track-my-booking';
@@ -34,6 +36,9 @@ class AppRoutes {
 
       case home:
         return MaterialPageRoute(builder: (_) => const HomePage());
+
+      case operator:
+        return MaterialPageRoute(builder: (_) => const OperatorStartPage());
 
       case profile:
         final args = settings.arguments;
