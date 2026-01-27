@@ -11,8 +11,26 @@ import { requireTempToken } from "../middleware/tempAuth.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
 import { getMe } from "../controllers/me.controller.js";
 
+<<<<<<< HEAD
+=======
+import {
+  login,
+  verifyLoginOtp,
+} from "../controllers/auth.controller.js";
+
+
+>>>>>>> pasindu
 
 const router = Router();
+
+// NEW unified login
+router.post("/login", login);
+router.post(
+  "/login/verify-otp",
+  requireTempToken,
+  verifyLoginOtp
+);
+
 
 // PASSENGER ROUTES
 router.post("/passenger/signup", passengerSignup);
@@ -32,5 +50,10 @@ router.post(
   adminVerifyLoginOtp
 );
 router.get("/me", requireAuth, getMe);
+ 
 
 export default router;
+
+
+
+

@@ -4,8 +4,7 @@ class TokenStore {
   // =======================
   // SECURE STORAGE INSTANCE
   // =======================
-  static const FlutterSecureStorage _storage =
-      FlutterSecureStorage();
+  static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
   // =======================
   // STORAGE KEYS
@@ -49,7 +48,8 @@ class TokenStore {
   // =======================
   // ROLE HANDLING (SAFE)
   // =======================
-  /// Accepts "admin", "passenger" OR numeric role_id (2, 1, etc.)
+  /// Accepts role name ("admin", "passenger", "operator", "driver")
+  /// OR numeric role_id as string/int (e.g., 2, "2")
   static Future<void> saveRole(dynamic role) async {
     final roleValue = role.toString();
     await _storage.write(
@@ -65,10 +65,29 @@ class TokenStore {
   /// Admin role check (string OR role_id supported)
   static Future<bool> isAdmin() async {
     final role = await getRole();
-
     if (role == null) return false;
 
+    // keep role_id check only if your DB uses 2 for admin (as you had)
     return role == "admin" || role == "2";
+  }
+
+  /// Staff roles check (admin/operator/driver)
+  static Future<bool> isStaff() async {
+    final role = await getRole();
+    if (role == null) return false;
+
+    return role == "admin" ||
+        role == "operator" ||
+        role == "driver" ||
+        // optional numeric role_ids if you ever store them
+        role == "2";
+  }
+
+  static Future<bool> isPassenger() async {
+    final role = await getRole();
+    if (role == null) return false;
+
+    return role == "passenger";
   }
 
   // =======================
@@ -87,8 +106,11 @@ class TokenStore {
     final refresh = await getRefreshToken();
     final role = await getRole();
 
+    // ignore: avoid_print
     print("🔐 ACCESS TOKEN: ${access != null ? 'EXISTS' : 'NULL'}");
+    // ignore: avoid_print
     print("🔄 REFRESH TOKEN: ${refresh != null ? 'EXISTS' : 'NULL'}");
+    // ignore: avoid_print
     print("👤 ROLE: $role");
   }
 

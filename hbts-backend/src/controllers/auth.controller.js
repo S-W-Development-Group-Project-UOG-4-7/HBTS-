@@ -8,6 +8,26 @@ import {
   signRefreshToken,
 } from "../services/token.service.js";
 
+async function findUserByIdentifier(identifier) {
+  const q = `
+    SELECT 
+      u.user_id,
+      u.name,
+      u.email,
+      u.phone,
+      u.password_hash,
+      u.is_verified,
+      r.role_name AS role
+    FROM users u
+    JOIN roles r ON r.role_id = u.role_id
+    WHERE u.email = $1 OR u.phone = $1
+    LIMIT 1
+  `;
+  const { rows } = await pool.query(q, [identifier.trim()]);
+  return rows[0] ?? null;
+}
+
+
 async function getRoleId(roleName) {
   const r = await pool.query(
     "SELECT role_id FROM roles WHERE role_name = $1 LIMIT 1",
@@ -85,56 +105,53 @@ export async function passengerVerifySignupOtp(req, res) {
       return res.status(400).json({ message: "Missing challengeId or otp" });
     }
 
-    const ch = await pool.query(
-      "SELECT user_id FROM otp_challenges WHERE id=$1",
-      [challengeId]
-    );
+    // Verify the OTP and get the user ID
+    const userId = await verifyOtp({ 
+      challengeId, 
+      otp, 
+      purpose: "SIGNUP_VERIFY" 
+    });
 
-    if (ch.rowCount === 0) {
-      return res.status(400).json({ message: "Invalid challengeId" });
-    }
-
-    const userId = ch.rows[0].user_id;
-
-    await verifyOtp({ challengeId, otp, purpose: "SIGNUP_VERIFY" });
-
-    await pool.query(
-      `
-      UPDATE users
-      SET is_verified=true,
-          email_verified_at=now(),
-          updated_at=now()
-      WHERE user_id=$1
-      `,
+    // Update user as verified and get their data in a single query
+    const result = await pool.query(
+      `WITH updated_user AS (
+        UPDATE users 
+        SET is_verified = true,
+            email_verified_at = NOW(),
+            updated_at = NOW()
+        WHERE user_id = $1
+        RETURNING user_id, email, role_id, name, phone
+      )
+      SELECT 
+        u.user_id, 
+        u.email, 
+        u.name,
+        u.phone,
+        r.role_name
+      FROM updated_user u
+      JOIN roles r ON u.role_id = r.role_id`,
       [userId]
     );
 
-    const { rows } = await pool.query(
-      `
-      SELECT u.user_id, u.name, u.email, u.phone, r.role_name AS role
-      FROM users u
-      JOIN roles r ON u.role_id = r.role_id
-      WHERE u.user_id = $1
-      `,
-      [userId]
-    );
-
-    if (!rows.length) {
-      return res.status(404).json({ message: "User not found" });
+    if (result.rowCount === 0) {
+      throw new Error("User not found or could not be verified");
     }
 
-    const user = rows[0];
+    const user = result.rows[0];
 
-    // ✅ use your token service so payload is consistent
-    const accessToken = signAccessToken(user);      // should include user_id + role
+    // Generate tokens
+    const accessToken = signAccessToken({
+      user_id: user.user_id,
+      role: user.role_name
+    });
+    
     const refreshToken = signRefreshToken(user.user_id);
 
+    // Store refresh token in database
     const tokenHash = await bcrypt.hash(refreshToken, 10);
     await pool.query(
-      `
-      INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
-      VALUES ($1, $2, now() + interval '30 days')
-      `,
+      `INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
+       VALUES ($1, $2, NOW() + INTERVAL '30 days')`,
       [user.user_id, tokenHash]
     );
 
@@ -142,8 +159,14 @@ export async function passengerVerifySignupOtp(req, res) {
       message: "Account verified successfully",
       accessToken,
       refreshToken,
-      role: user.role,
-      user,
+      role: user.role_name,
+      user: {
+        id: user.user_id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role_name
+      }
     });
   } catch (err) {
     return res.status(400).json({ message: err.message });
@@ -206,29 +229,95 @@ export async function passengerLogin(req, res) {
   }
 }
 
+/* updating login function */
+export async function login(req, res) {
+  try {
+    const { identifier, password } = req.body;
+
+    if (!identifier || !password) {
+      return res.status(400).json({ message: "Missing identifier or password" });
+    }
+
+    const user = await findUserByIdentifier(identifier);
+    if (!user) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    if (!user.is_verified) {
+      return res.status(403).json({ message: "Account not verified" });
+    }
+
+    const ok = await bcrypt.compare(password, user.password_hash);
+    if (!ok) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const otpData = await createOtp({
+      userId: user.user_id,
+      email: user.email,
+      phone: user.phone,
+      purpose: "LOGIN_2FA",
+    });
+
+    // temp token ONLY identifies user session
+    const tempToken = signTempToken(user.user_id);
+
+    return res.json({
+      message: "OTP sent",
+      challengeId: otpData.challengeId,
+      expiresAt: otpData.expiresAt,
+      tempToken,
+      role: user.role, // helpful for UI
+    });
+  } catch (err) {
+    console.error("login error:", err);
+    return res.status(500).json({ message: err.message });
+  }
+}
+
+
 /* =========================
    PASSENGER LOGIN OTP VERIFY (STEP 2)
 ========================= */
 export async function passengerVerifyLoginOtp(req, res) {
   try {
     const { challengeId, otp } = req.body;
-    const userId = req.userId; // from requireTempToken middleware
+const userId = req.userId; // from requireTempToken middleware
 
-    if (!challengeId || !otp) {
-      return res.status(400).json({ message: "Missing challengeId or otp" });
-    }
+if (!challengeId || !otp) {
+  return res.status(400).json({ message: "Missing challengeId or otp" });
+}
 
-    await verifyOtp({ challengeId, otp, purpose: "LOGIN_2FA" });
+// 1️⃣ Load OTP challenge
+const ch = await pool.query(
+  "SELECT user_id FROM otp_challenges WHERE id = $1",
+  [challengeId]
+);
 
-    const { rows } = await pool.query(
-      `
-      SELECT u.user_id, u.name, u.email, u.phone, r.role_name AS role
-      FROM users u
-      JOIN roles r ON u.role_id = r.role_id
-      WHERE u.user_id = $1
-      `,
-      [userId]
-    );
+if (!ch.rowCount) {
+  return res.status(400).json({ message: "Invalid challengeId" });
+}
+
+// 2️⃣ Ensure OTP belongs to the SAME user as temp token
+if (ch.rows[0].user_id !== userId) {
+  return res.status(403).json({
+    message: "OTP does not belong to this session",
+  });
+}
+
+// 3️⃣ Verify OTP
+await verifyOtp({ challengeId, otp, purpose: "LOGIN_2FA" });
+
+// 4️⃣ Load user
+const { rows } = await pool.query(
+  `
+  SELECT u.user_id, u.name, u.email, u.phone, r.role_name AS role
+  FROM users u
+  JOIN roles r ON u.role_id = r.role_id
+  WHERE u.user_id = $1
+  `,
+  [userId]
+);
 
     if (!rows.length) {
       return res.status(401).json({ message: "User not found" });
@@ -260,6 +349,76 @@ export async function passengerVerifyLoginOtp(req, res) {
     return res.status(400).json({ message: err.message });
   }
 }
+
+
+/* new otp verifying */
+
+export async function verifyLoginOtp(req, res) {
+  try {
+    const { challengeId, otp } = req.body;
+    const userId = req.userId; // from requireTempToken
+
+    if (!challengeId || !otp) {
+      return res.status(400).json({ message: "Missing challengeId or otp" });
+    }
+
+    // Ensure OTP belongs to this user
+    const ch = await pool.query(
+      "SELECT user_id FROM otp_challenges WHERE id = $1",
+      [challengeId]
+    );
+
+    if (!ch.rowCount || ch.rows[0].user_id !== userId) {
+      return res.status(403).json({ message: "OTP session mismatch" });
+    }
+
+    await verifyOtp({ challengeId, otp, purpose: "LOGIN_2FA" });
+
+    const { rows } = await pool.query(
+      `
+      SELECT 
+        u.user_id,
+        u.name,
+        u.email,
+        u.phone,
+        r.role_name AS role
+      FROM users u
+      JOIN roles r ON r.role_id = u.role_id
+      WHERE u.user_id = $1
+      `,
+      [userId]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const user = rows[0];
+
+    const accessToken = signAccessToken(user);
+    const refreshToken = signRefreshToken(user.user_id);
+
+    const tokenHash = await bcrypt.hash(refreshToken, 10);
+    await pool.query(
+      `
+      INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
+      VALUES ($1, $2, now() + interval '30 days')
+      `,
+      [user.user_id, tokenHash]
+    );
+
+    return res.json({
+      accessToken,
+      refreshToken,
+      role: user.role,
+      user,
+    });
+  } catch (err) {
+    console.error("verifyLoginOtp error:", err);
+    return res.status(400).json({ message: err.message });
+  }
+}
+
 
 /* =========
    ADMIN

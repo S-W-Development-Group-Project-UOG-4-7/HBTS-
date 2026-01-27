@@ -66,29 +66,24 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final result = await AuthApi.login(
-        email: _emailController.text.trim(),
+      final result = await AuthApi.unifiedLogin(
+        identifier: _emailController.text.trim(), // email OR phone
         password: _passwordController.text,
       );
 
       final tempToken = result["tempToken"] as String?;
-    final challengeIdRaw = result["challengeId"];
-final int challengeId = int.parse(challengeIdRaw.toString());
+      final challengeIdRaw = result["challengeId"];
+      final int? challengeId = int.tryParse(challengeIdRaw.toString());
 
-      final role = result["role"]; // 🔥 IMPORTANT
-
-      if (tempToken == null || challengeId == null || role == null) {
+      if (tempToken == null || challengeId == null) {
         throw Exception("Invalid response from server");
       }
 
       if (!mounted) return;
 
-      // =======================
-      // SELECT OTP FLOW BY ROLE
-      // =======================
-      final otpFlow = role == "admin"
-          ? OtpFlow.adminLogin2fa
-          : OtpFlow.passengerLogin2fa;
+      // Unified login uses a single OTP flow
+      final otpFlow = OtpFlow.login2fa;
+
 
       Navigator.push(
         context,
@@ -180,14 +175,25 @@ final int challengeId = int.parse(challengeIdRaw.toString());
                         ),
                       ),
                       validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your email';
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your email or phone';
                         }
-                        if (!value.contains('@')) {
-                          return 'Please enter a valid email';
+
+                        final v = value.trim();
+
+                        // allow common phone formats by stripping spaces/dashes
+                        final phoneCandidate = v.replaceAll(RegExp(r'[\s\-()]'), '');
+
+                        final isEmail = v.contains('@');
+                        final isPhone = RegExp(r'^\+?\d{9,15}$').hasMatch(phoneCandidate);
+
+                        if (!isEmail && !isPhone) {
+                          return 'Enter a valid email or phone number';
                         }
+
                         return null;
                       },
+
                     ),
 
                     const SizedBox(height: 20),

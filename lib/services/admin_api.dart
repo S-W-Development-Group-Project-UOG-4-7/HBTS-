@@ -5,9 +5,9 @@ import 'token_store.dart';
 
 class AdminApi {
   // 🌐 Backend base URL
-  static const String baseUrl = "http://localhost:4000";
+  //static const String baseUrl = "http://localhost:4000";
   // Android emulator:
-  // static const String baseUrl = "http://10.0.2.2:4000";
+   static const String baseUrl = "http://10.0.2.2:4000";
 
   // =======================
   // AUTH HEADERS
@@ -42,7 +42,7 @@ class AdminApi {
   // =======================
   static Future<List<dynamic>> getPassengers(String search) async {
     final uri = Uri.parse(
-      "$baseUrl/admin/passengers?search=${Uri.encodeQueryComponent(search)}",
+      "$baseUrl/api/admin/passengers?search=${Uri.encodeQueryComponent(search)}",
     );
 
     final res = await http.get(uri, headers: await _headers());
@@ -66,7 +66,7 @@ class AdminApi {
   static Future<Map<String, dynamic>> fetchPassengerDetails(
     int userId,
   ) async {
-    final uri = Uri.parse("$baseUrl/admin/passengers/$userId");
+    final uri = Uri.parse("$baseUrl/api/admin/passengers/$userId");
 
     final res = await http.get(uri, headers: await _headers());
 
@@ -94,7 +94,7 @@ class AdminApi {
     int userId,
   ) async {
     final uri =
-        Uri.parse("$baseUrl/admin/passengers/$userId/bookings");
+        Uri.parse("$baseUrl/api/admin/passengers/$userId/bookings");
 
     final res = await http.get(uri, headers: await _headers());
 
@@ -121,7 +121,7 @@ class AdminApi {
   static Future<void> addPassenger(
     Map<String, dynamic> data,
   ) async {
-    final uri = Uri.parse("$baseUrl/admin/passengers");
+    final uri = Uri.parse("$baseUrl/api/admin/passengers");
 
     final res = await http.post(
       uri,
@@ -142,7 +142,7 @@ class AdminApi {
     int id,
     Map<String, dynamic> data,
   ) async {
-    final uri = Uri.parse("$baseUrl/admin/passengers/$id");
+    final uri = Uri.parse("$baseUrl/api/admin/passengers/$id");
 
     final res = await http.put(
       uri,
@@ -160,7 +160,7 @@ class AdminApi {
   // DELETE /admin/passengers/:id
   // =======================
   static Future<void> deletePassenger(int id) async {
-    final uri = Uri.parse("$baseUrl/admin/passengers/$id");
+    final uri = Uri.parse("$baseUrl/api/admin/passengers/$id");
 
     final res = await http.delete(
       uri,

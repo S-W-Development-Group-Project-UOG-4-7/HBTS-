@@ -7,11 +7,16 @@ import 'screens/schedule_page.dart';
 import 'screens/my_bookings_page.dart';
 import 'screens/track_my_booking_page.dart';
 import 'screens/track_bus_page.dart';
+import 'screens/notifications_page.dart';
+
 
 import 'screens/trip_details_page.dart';
 import 'screens/seat_selection_page.dart';
 import 'screens/confirm_booking_page.dart';
 import 'screens/booking_success_page.dart';
+
+import 'admin/dashboard.dart';
+
 
 class AppRoutes {
   static const login = '/login';
@@ -21,16 +26,23 @@ class AppRoutes {
   static const myBookings = '/my-bookings';
   static const trackMyBooking = '/track-my-booking';
   static const trackBus = '/track-bus';
+  static const notifications = '/notifications';
+
 
   static const tripDetails = '/trip-details';
   static const seatSelect = '/seat-select';
   static const confirmBooking = '/confirm-booking';
   static const bookingSuccess = '/booking-success';
 
+  static const adminHome = '/admin/dashboard';
+
   static Route<dynamic> onGenerate(RouteSettings settings) {
     switch (settings.name) {
       case login:
         return MaterialPageRoute(builder: (_) => const LoginScreen());
+
+      case adminHome:
+        return MaterialPageRoute(builder: (_) => const AdminDashboard());  
 
       case home:
         return MaterialPageRoute(builder: (_) => const HomePage());
@@ -46,7 +58,10 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const SchedulePage());
 
       case myBookings:
-        return MaterialPageRoute(builder: (_) => const MyBookingsPage());
+        return MaterialPageRoute(builder: (_) => const PassengerBookingsPage());
+
+      case notifications:
+        return MaterialPageRoute(builder: (_) => const NotificationsPage());
 
       case trackMyBooking:
         return MaterialPageRoute(builder: (_) => const TrackMyBookingPage());

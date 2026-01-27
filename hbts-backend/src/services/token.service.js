@@ -6,10 +6,11 @@ import jwt from "jsonwebtoken";
 export function signTempToken(userId) {
   return jwt.sign(
     {
-      userId: userId, // 🔑 REQUIRED
+      userId: userId,// 🔑 REQUIRED
+      type: "TEMP_2FA"
     },
     process.env.JWT_TEMP_SECRET,
-    { expiresIn: "5m" }
+    { expiresIn: "10m" }
   );
 }
 
@@ -20,10 +21,11 @@ export function signAccessToken(user) {
   return jwt.sign(
     {
       userId: user.user_id, // 🔑 REQUIRED
-      role: user.role,      // 🔑 REQUIRED
+      role: user.role, 
+      type: "ACCESS"     // 🔑 REQUIRED
     },
     process.env.JWT_ACCESS_SECRET,
-    { expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN }
+    { expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN || "1h" }
   );
 }
 

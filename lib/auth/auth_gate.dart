@@ -18,23 +18,35 @@ class _AuthGateState extends State<AuthGate> {
 
   Future<void> _decide() async {
     final loggedIn = await TokenStore.isLoggedIn();
-    final isAdmin = await TokenStore.isAdmin();
 
     if (!mounted) return;
 
     if (!loggedIn) {
-      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.login,
+        (_) => false,
+      );
       return;
     }
 
-    // if admin, you can route to an admin route if you add it
-    if (isAdmin) {
-      // Navigator.pushNamedAndRemoveUntil(context, AppRoutes.adminHome, (_) => false);
-      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
-      return;
-    }
+    final isStaff = await TokenStore.isStaff();
 
-    Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (_) => false);
+    if (!mounted) return;
+
+    if (isStaff) {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.adminHome, // or dashboard route
+        (_) => false,
+      );
+    } else {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.home,
+        (_) => false,
+      );
+    }
   }
 
   @override

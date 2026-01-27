@@ -4,15 +4,14 @@ import 'package:http/http.dart' as http;
 
 import '../models/user_model.dart';
 import 'token_store.dart';
+import '../config.dart'; // ✅ ADD (update path if needed)
 
 class UserApi {
-  // ✅ Android Emulator MUST use this
-  static const String baseUrl = "http://10.0.2.2:4000";
-
   static const String profileEndpoint = "/api/auth/me";
 
   static Future<AppUser> fetchLoggedInUser() async {
     final token = await TokenStore.getAccessToken();
+    final baseUrl = AppConfig.baseUrl; // ✅ use config
 
     print(
       "ME CALL => $baseUrl$profileEndpoint | token=${token == null ? 'null' : 'present'}",
@@ -26,7 +25,7 @@ class UserApi {
             "Content-Type": "application/json",
           },
         )
-        .timeout(const Duration(seconds: 10)); // ✅ prevents infinite loading
+        .timeout(const Duration(seconds: 10));
 
     print("ME RESP => ${res.statusCode} | ${res.body}");
 
