@@ -26,13 +26,8 @@ export const requireAuth = (req, res, next) => {
     // decoded MUST contain: userId, role
     req.user = {
       ...decoded,
-<<<<<<< HEAD
-      id: decoded.id ?? decoded.userId,
-      userId: decoded.userId ?? decoded.id,
-=======
       user_id: userId,
       id: userId,
->>>>>>> 07412e1203042fbfa2a74db4f898a950bbd6509e
     };
 
     next();

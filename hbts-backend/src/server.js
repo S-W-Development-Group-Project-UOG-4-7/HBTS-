@@ -1,9 +1,3 @@
-import express from "express";
-import cors from "cors";
-import { loadEnv } from "./utils/env.js";
-import path from "path";
-import { fileURLToPath } from "url";
-
 // src/server.js
 import path from "path";
 import { fileURLToPath } from "url";
@@ -11,6 +5,7 @@ import dotenv from "dotenv";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const uploadsDir = path.join(__dirname, "..", "uploads");
 
 // ✅ Load .env from project root (hbts-backend/.env)
 dotenv.config({ path: path.join(__dirname, "../.env") });

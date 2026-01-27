@@ -81,7 +81,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.4"
-<<<<<<< HEAD
   file:
     dependency: transitive
     description:
@@ -90,7 +89,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.1"
-=======
   file_selector_linux:
     dependency: transitive
     description:
@@ -123,7 +121,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.9.3+5"
->>>>>>> 07412e1203042fbfa2a74db4f898a950bbd6509e
   flutter:
     dependency: "direct main"
     description: flutter
@@ -435,7 +432,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.8"
-<<<<<<< HEAD
+  provider:
+    dependency: "direct main"
+    description:
+      name: provider
+      sha256: "4e82183fa20e5ca25703ead7e05de9e4cceed1fbd1eadc1ac3cb6f565a09f272"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.1.5+1"
   shared_preferences:
     dependency: "direct main"
     description:
@@ -492,16 +496,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.4.1"
-=======
-  provider:
-    dependency: "direct main"
-    description:
-      name: provider
-      sha256: "4e82183fa20e5ca25703ead7e05de9e4cceed1fbd1eadc1ac3cb6f565a09f272"
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.1.5+1"
->>>>>>> 07412e1203042fbfa2a74db4f898a950bbd6509e
   sky_engine:
     dependency: transitive
     description: flutter

@@ -4,7 +4,7 @@ import '../config.dart';
 
 class AuthApi {
   // Helper to build URLs
-  static Uri _u(String path) => Uri.parse("${AppConfig.baseUrl}/api$path");
+  static Uri _u(String path) => Uri.parse("${AppConfig.baseUrl}$path");
 
   // Safe JSON decode
   static Map<String, dynamic> _decode(http.Response res) {
@@ -207,7 +207,3 @@ class AuthApi {
     throw Exception(body["message"] ?? "Unified OTP verification failed");
   }
 }
-<<<<<<< HEAD
-  
-=======
->>>>>>> 07412e1203042fbfa2a74db4f898a950bbd6509e

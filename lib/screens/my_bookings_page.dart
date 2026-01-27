@@ -3,10 +3,6 @@ import '../api/booking_api.dart';
 import '../models/my_booking_item.dart';
 import 'booking_details_page.dart';
 
-<<<<<<< HEAD
-class MyBookingsPage extends StatelessWidget {
-  const MyBookingsPage({super.key});
-=======
 enum BookingStatusUI { scheduled, cancelled, onboard, completed }
 
 BookingStatusUI mapUiStatus(MyBookingItem b) {
@@ -53,7 +49,6 @@ class _PassengerBookingsPageState extends State<PassengerBookingsPage> {
       setState(() => _loading = false);
     }
   }
->>>>>>> 07412e1203042fbfa2a74db4f898a950bbd6509e
 
   @override
   Widget build(BuildContext context) {
