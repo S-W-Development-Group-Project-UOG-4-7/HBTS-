@@ -4,6 +4,7 @@ class OperatorSession {
   static String? token;
   static int? operatorId;
   static String? operatorName;
+  static String? operatorEmail;
 
   static bool get isLoggedIn => token != null && operatorId != null;
 
@@ -11,5 +12,6 @@ class OperatorSession {
     token = null;
     operatorId = null;
     operatorName = null;
+    operatorEmail = null;
   }
 }

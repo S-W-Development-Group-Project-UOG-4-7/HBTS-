@@ -144,6 +144,17 @@ async function findCompanyByEmail(email) {
   return rows[0] || null;
 }
 
+async function findCompanyByOperatorId(operatorId) {
+  const { rows } = await pool.query(
+    `SELECT operator_id, name, email
+       FROM company
+      WHERE operator_id = $1
+      LIMIT 1`,
+    [operatorId]
+  );
+  return rows[0] || null;
+}
+
 /**
  * POST /operator/login
  * Body: { email, password }
@@ -236,15 +247,27 @@ router.get("/me", async (req, res) => {
       [operatorId]
     );
 
-    if (!rows.length) {
-      return res.status(404).json({ message: "Operator not found" });
+    let record = rows[0] || null;
+
+    if (!record) {
+      record = await findCompanyByOperatorId(operatorId);
+    }
+
+    if (!record) {
+      const fallback = req.operator || {};
+      return res.json({
+        id: operatorId,
+        operator_id: operatorId,
+        name: fallback.name || "Operator",
+        email: fallback.email || null,
+      });
     }
 
     return res.json({
-      id: rows[0].operator_id,
-      operator_id: rows[0].operator_id,
-      name: rows[0].name,
-      email: rows[0].email,
+      id: record.operator_id,
+      operator_id: record.operator_id,
+      name: record.name,
+      email: record.email,
     });
   } catch (e) {
     return res.status(500).json({ message: "Failed to load operator", error: e.message });

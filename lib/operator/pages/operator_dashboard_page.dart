@@ -771,15 +771,60 @@ class _InlineNotice extends StatelessWidget {
 class _OperatorHeaderCard extends StatelessWidget {
   final Future<Map<String, dynamic>> operatorFuture;
   final String? fallbackName;
+  final String? fallbackEmail;
   final VoidCallback onRetry;
 
   const _OperatorHeaderCard({
     required this.operatorFuture,
     required this.fallbackName,
+    required this.fallbackEmail,
     required this.onRetry,
   });
 
   String _safeStr(dynamic v) => (v == null) ? "-" : v.toString();
+
+  Widget _infoCard({required String name, required String email}) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: _primaryColor.withOpacity(0.12),
+            child: const Icon(Icons.badge, color: _primaryColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: _appFont(size: 14, weight: FontWeight.w700),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  email == "-" ? "No email provided" : email,
+                  style: _appFont(size: 11, color: Colors.grey.shade700),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -790,6 +835,16 @@ class _OperatorHeaderCard extends StatelessWidget {
           return const LinearProgressIndicator();
         }
         if (snapshot.hasError) {
+          final fallback = fallbackName?.trim();
+          if (fallback != null && fallback.isNotEmpty) {
+            final emailFallback = fallbackEmail?.trim();
+            return _infoCard(
+              name: fallback,
+              email: (emailFallback != null && emailFallback.isNotEmpty)
+                  ? emailFallback
+                  : "-",
+            );
+          }
           return _InlineNotice(
             icon: Icons.info_outline,
             title: "Operator Info",
@@ -810,48 +865,9 @@ class _OperatorHeaderCard extends StatelessWidget {
 
         final op = snapshot.data!;
         final name = _safeStr(op["name"] ?? fallbackName);
-        final email = _safeStr(op["email"]);
+        final email = _safeStr(op["email"] ?? fallbackEmail);
 
-        return Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 14,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: _primaryColor.withOpacity(0.12),
-                child: const Icon(Icons.badge, color: _primaryColor),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: _appFont(size: 14, weight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      email == "-" ? "No email provided" : email,
-                      style: _appFont(size: 11, color: Colors.grey.shade700),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
+        return _infoCard(name: name, email: email);
       },
     );
   }
@@ -1477,6 +1493,7 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
         final infoCard = _OperatorHeaderCard(
           operatorFuture: _operatorFuture,
           fallbackName: OperatorSession.operatorName,
+          fallbackEmail: OperatorSession.operatorEmail,
           onRetry: _reload,
         );
 

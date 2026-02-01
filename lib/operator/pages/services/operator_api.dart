@@ -155,6 +155,7 @@ class OperatorApi {
     OperatorSession.operatorId = int.tryParse(idStr ?? "");
 
     OperatorSession.operatorName = operator["name"]?.toString();
+    OperatorSession.operatorEmail = operator["email"]?.toString();
 
     if (OperatorSession.operatorId == null) {
       throw Exception('Invalid operator id from backend: ${operator["id"]}');

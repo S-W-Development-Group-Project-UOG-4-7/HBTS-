@@ -120,6 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
         OperatorSession.token = token;
         OperatorSession.operatorId = operatorId;
         OperatorSession.operatorName = operator["name"]?.toString();
+        OperatorSession.operatorEmail = operator["email"]?.toString();
 
         // ✅ save to TokenStore so main.dart routing works
         await TokenStore.saveToken(token);
