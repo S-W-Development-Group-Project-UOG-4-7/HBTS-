@@ -64,7 +64,7 @@ class TokenStore {
   // =======================
   // ROLE HANDLING (SAFE)
   // =======================
-  /// Accepts role name ("admin", "passenger", "operator", "driver")
+  /// Accepts role name ("admin", "passenger", "operator", "driver", "conductor")
   /// OR numeric role_id as string/int (e.g., 2, "2")
   static Future<void> saveRole(dynamic role) async {
     final roleValue = role.toString();
@@ -91,7 +91,7 @@ class TokenStore {
     return role == "admin" || role == "2";
   }
 
-  /// Staff roles check (admin/operator/driver)
+  /// Staff roles check (admin/operator/driver/conductor)
   static Future<bool> isStaff() async {
     final role = await getRole();
     if (role == null) return false;
@@ -99,6 +99,7 @@ class TokenStore {
     return role == "admin" ||
         role == "operator" ||
         role == "driver" ||
+        role == "conductor" ||
         // optional numeric role_ids if you ever store them
         role == "2";
   }

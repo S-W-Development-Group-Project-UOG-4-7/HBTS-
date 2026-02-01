@@ -7,6 +7,7 @@ import { fileURLToPath } from "url";
 import operatorRoutes from "./src/routes/operator.routes.js";
 import operatorBusesRoutes from "./src/routes/operator_buses.routes.js";
 import operatorDriversRoutes from "./src/routes/operator_drivers.routes.js";
+import operatorConductorsRoutes from "./src/routes/operator_conductors.routes.js";
 import operatorRoutesRoutes from "./src/routes/operator_routes.routes.js";
 import operatorTripsRoutes from "./src/routes/operator_trips.routes.js";
 import platformAllocationRoutes from "./src/routes/platform_allocation.routes.js";
@@ -28,6 +29,7 @@ app.get("/", (req, res) => res.json({ ok: true, message: "HBTS backend running" 
 
 app.use("/operator/buses", operatorBusesRoutes);
 app.use("/operator/drivers", operatorDriversRoutes);
+app.use("/operator/conductors", operatorConductorsRoutes);
 app.use("/operator/routes", operatorRoutesRoutes);
 app.use("/operator/trips", operatorTripsRoutes);
 app.use("/operator", operatorRoutes);
@@ -35,6 +37,7 @@ app.use("/operator/platforms", platformAllocationRoutes);
 app.use("/operator/tickets", ticketValidationRoutes);
 app.use("/api/operator/buses", operatorBusesRoutes);
 app.use("/api/operator/drivers", operatorDriversRoutes);
+app.use("/api/operator/conductors", operatorConductorsRoutes);
 app.use("/api/operator/routes", operatorRoutesRoutes);
 app.use("/api/operator/trips", operatorTripsRoutes);
 app.use("/api/operator", operatorRoutes);

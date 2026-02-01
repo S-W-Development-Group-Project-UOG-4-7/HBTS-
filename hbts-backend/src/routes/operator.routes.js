@@ -133,6 +133,17 @@ async function seedOperatorIfConfigured() {
   );
 }
 
+async function findCompanyByEmail(email) {
+  const { rows } = await pool.query(
+    `SELECT operator_id, name, email
+       FROM company
+      WHERE LOWER(email) = LOWER($1)
+      LIMIT 1`,
+    [email]
+  );
+  return rows[0] || null;
+}
+
 /**
  * POST /operator/login
  * Body: { email, password }
@@ -177,11 +188,16 @@ router.post("/login", async (req, res) => {
       return res.status(500).json({ message: "JWT secret not configured" });
     }
 
+    const company = await findCompanyByEmail(op.email);
+    const operatorId = company?.operator_id ?? op.operator_id;
+    const operatorName = company?.name ?? op.name;
+    const operatorEmail = company?.email ?? op.email;
+
     const token = jwt.sign(
       {
-        operator_id: op.operator_id,
-        email: op.email,
-        name: op.name,
+        operator_id: operatorId,
+        email: operatorEmail,
+        name: operatorName,
         role: "operator",
       },
       jwtSecret,
@@ -191,10 +207,10 @@ router.post("/login", async (req, res) => {
     return res.json({
       token,
       operator: {
-        id: op.operator_id,
-        operator_id: op.operator_id,
-        name: op.name,
-        email: op.email,
+        id: operatorId,
+        operator_id: operatorId,
+        name: operatorName,
+        email: operatorEmail,
       },
     });
   } catch (e) {

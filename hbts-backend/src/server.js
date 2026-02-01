@@ -23,6 +23,7 @@ import bookingRoutes from "./routes/booking.routes.js";
 import operatorRoutes from "./routes/operator.routes.js";
 import operatorBusesRoutes from "./routes/operator_buses.routes.js";
 import operatorDriversRoutes from "./routes/operator_drivers.routes.js";
+import operatorConductorsRoutes from "./routes/operator_conductors.routes.js";
 import operatorRoutesRoutes from "./routes/operator_routes.routes.js";
 import operatorTripsRoutes from "./routes/operator_trips.routes.js";
 import platformAllocationRoutes from "./routes/platform_allocation.routes.js";
@@ -34,6 +35,7 @@ import notificationRoutes from "./routes/notification.routes.js";
 
 import { initNotificationWS } from "./ws/notification.ws.js";
 import { initTrackingWS } from "./ws/tracking.ws.js";
+import { initDatabase } from "./db/init.js";
 
 const app = express();
 
@@ -63,6 +65,7 @@ app.use("/api/seat-selection", seatSelectionRoutes);
 // =======================
 app.use("/api/operator/buses", operatorBusesRoutes);
 app.use("/api/operator/drivers", operatorDriversRoutes);
+app.use("/api/operator/conductors", operatorConductorsRoutes);
 app.use("/api/operator/routes", operatorRoutesRoutes);
 app.use("/api/operator/trips", operatorTripsRoutes);
 app.use("/api/operator/platforms", platformAllocationRoutes);
@@ -80,6 +83,13 @@ app.get("/health", (req, res) => res.json({ ok: true }));
 app.get("/", (req, res) => res.send("HBTS Backend is running 🚀"));
 
 const PORT = process.env.PORT || 4000;
+
+try {
+  await initDatabase();
+} catch (e) {
+  console.error("DB init failed:", e);
+  process.exit(1);
+}
 
 // ✅ Create HTTP server
 const server = http.createServer(app);

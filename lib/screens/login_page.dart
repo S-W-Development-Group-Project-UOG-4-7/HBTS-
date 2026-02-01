@@ -63,6 +63,14 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    if (role == "driver" || role == "conductor") {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const AdminDashboard()),
+      );
+      return;
+    }
+
     // default user/passenger
     Navigator.pushReplacement(
       context,

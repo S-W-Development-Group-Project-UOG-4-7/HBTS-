@@ -154,7 +154,11 @@ export async function pushTripLocation(req, res) {
     // Role check (tune based on how your JWT stores role)
     const role = req.user?.role;
     const isStaff =
-      role === "admin" || role === "operator" || role === "driver" || role === "2";
+      role === "admin" ||
+      role === "operator" ||
+      role === "driver" ||
+      role === "conductor" ||
+      role === "2";
 
     if (!isStaff) return res.status(403).json({ message: "Forbidden" });
 

@@ -134,9 +134,18 @@ class _OperatorTripsPageState extends State<OperatorTripsPage> {
               runSpacing: 8,
               children: filters.map((f) {
                 final id = f["id"]!;
+                final selected = _statusFilter == id;
                 return ChoiceChip(
                   label: Text(f["label"]!),
-                  selected: _statusFilter == id,
+                  selected: selected,
+                  selectedColor: Colors.blue.shade600,
+                  backgroundColor: Colors.white,
+                  side: BorderSide(color: Colors.blue.shade200),
+                  labelStyle: TextStyle(
+                    color: selected ? Colors.white : Colors.blue.shade700,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  checkmarkColor: Colors.white,
                   onSelected: (_) {
                     setState(() {
                       _statusFilter = id;

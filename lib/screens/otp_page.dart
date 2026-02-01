@@ -104,7 +104,8 @@ class _OtpScreenState extends State<OtpScreen> {
       // =======================
       // ROLE-BASED NAVIGATION
       // =======================
-      final isStaff = role == "admin" || role == "operator" || role == "driver";
+      final isStaff =
+          role == "admin" || role == "operator" || role == "driver" || role == "conductor";
 
       if (isStaff) {
         // For now, all staff go to AdminDashboard.
