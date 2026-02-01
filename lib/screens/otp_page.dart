@@ -3,6 +3,8 @@ import '../services/auth_api.dart';
 import '../services/token_store.dart';
 import '../app_routes.dart';
 import '/admin/dashboard.dart';
+import 'package:flutter/services.dart';
+
 
 /// OTP flow types
 enum OtpFlow {
@@ -84,6 +86,11 @@ class _OtpScreenState extends State<OtpScreen> {
         throw Exception("Invalid authentication response");
       }
 
+      // ✅ Show token in console + dialog for easy Postman use
+printLong("ACCESS TOKEN => $accessToken");
+await showTokenDialog(accessToken);
+
+
       final role = roleRaw.toString().toLowerCase();
 
       await TokenStore.saveTokens(
@@ -104,23 +111,30 @@ class _OtpScreenState extends State<OtpScreen> {
       // =======================
       // ROLE-BASED NAVIGATION
       // =======================
-      final isStaff =
-          role == "admin" || role == "operator" || role == "driver" || role == "conductor";
-
-      if (isStaff) {
-        // For now, all staff go to AdminDashboard.
-        // Later you can route operator/driver to their dashboards.
-        Navigator.pushAndRemoveUntil(
+      if (role == "conductor") {
+        Navigator.pushNamedAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const AdminDashboard()),
+          AppRoutes.conductorHome,
           (_) => false,
         );
       } else {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.home,
-          (_) => false,
-        );
+        final isStaff = role == "admin" || role == "operator" || role == "driver";
+
+        if (isStaff) {
+          // For now, all staff go to AdminDashboard.
+          // Later you can route operator/driver to their dashboards.
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const AdminDashboard()),
+            (_) => false,
+          );
+        } else {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.home,
+            (_) => false,
+          );
+        }
       }
     } catch (e) {
       if (!mounted) return;
@@ -131,6 +145,44 @@ class _OtpScreenState extends State<OtpScreen> {
       if (mounted) setState(() => _isLoading = false);
     }
   }
+
+  void printLong(String text) {
+  const chunkSize = 800;
+  for (var i = 0; i < text.length; i += chunkSize) {
+    final end = (i + chunkSize > text.length) ? text.length : i + chunkSize;
+    // ignore: avoid_print
+    print(text.substring(i, end));
+  }
+}
+
+Future<void> showTokenDialog(String token) async {
+  if (!mounted) return;
+
+  await showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text('Access Token (copy for Postman)'),
+      content: SingleChildScrollView(child: SelectableText(token)),
+      actions: [
+        TextButton(
+          onPressed: () async {
+            await Clipboard.setData(ClipboardData(text: token));
+            if (mounted) Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Token copied to clipboard')),
+            );
+          },
+          child: const Text('Copy'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Close'),
+        ),
+      ],
+    ),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {

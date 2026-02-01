@@ -64,6 +64,26 @@ class BookingApi {
         .toList();
   }
 
+  static Future<Map<String, dynamic>> getBookingTracking(int bookingId) async {
+  final token = await TokenStore.getAccessToken();
+  if (token == null || token.isEmpty) {
+    throw Exception("Not logged in (missing access token)");
+  }
+
+  final uri = Uri.parse("${AppConfig.baseUrl}/api/bookings/$bookingId/tracking");
+  final res = await http.get(
+    uri,
+    headers: {"Authorization": "Bearer $token"},
+  );
+
+  if (res.statusCode != 200) {
+    throw Exception("Tracking snapshot failed (${res.statusCode}): ${res.body}");
+  }
+
+  return jsonDecode(res.body) as Map<String, dynamic>;
+}
+
+
   static Future<void> changeSeat({
     required int bookingId,
     required int seatId,

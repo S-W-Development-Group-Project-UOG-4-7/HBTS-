@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uploadsDir = path.join(__dirname, "..", "uploads");
 
-// ✅ Load .env from project root (hbts-backend/.env)
+// âœ… Load .env from project root (hbts-backend/.env)
 dotenv.config({ path: path.join(__dirname, "../.env") });
 
 import http from "http";
@@ -30,10 +30,13 @@ import platformAllocationRoutes from "./routes/platform_allocation.routes.js";
 import ticketValidationRoutes from "./routes/ticket_validation.routes.js";
 import seatSelectionRoutes from "./routes/seat_selection.routes.js";
 import paymentRoutes from "./routes/payments.routes.js";
-import { startExpirePendingBookingsJob } from "./jobs/expirePendingBookings.job.js";
 import notificationRoutes from "./routes/notification.routes.js";
+import conductorRoutes from "./routes/conductor.routes.js";
+import routeRoutes from "./routes/route.routes.js";
 
+import { startExpirePendingBookingsJob } from "./jobs/expirePendingBookings.job.js";
 import { initNotificationWS } from "./ws/notification.ws.js";
+import { initRealtimeWS } from "./ws/realtime.ws.js";
 import { initTrackingWS } from "./ws/tracking.ws.js";
 import { initDatabase } from "./db/init.js";
 
@@ -52,7 +55,7 @@ app.options("*", cors());
 app.use(express.json());
 app.use("/uploads", express.static(uploadsDir));
 
-// ✅ Routes
+// âœ… Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/trips", tripRoutes);
@@ -61,7 +64,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/seat-selection", seatSelectionRoutes);
 
 // =======================
-// OPERATOR ROUTES (✅ make consistent)
+// OPERATOR ROUTES
 // =======================
 app.use("/api/operator/buses", operatorBusesRoutes);
 app.use("/api/operator/drivers", operatorDriversRoutes);
@@ -72,15 +75,15 @@ app.use("/api/operator/platforms", platformAllocationRoutes);
 app.use("/api/operator/tickets", ticketValidationRoutes);
 app.use("/api/operator", operatorRoutes);
 
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/conductor", conductorRoutes);
+app.use("/api/routes", routeRoutes);
+
 // =======================
 // HEALTH CHECKS
 // =======================
 app.get("/health", (req, res) => res.json({ ok: true }));
-app.get("/", (req, res) => res.send("HBTS Backend is running 🚀"));
-app.use("/api/notifications", notificationRoutes);
-
-app.get("/health", (req, res) => res.json({ ok: true }));
-app.get("/", (req, res) => res.send("HBTS Backend is running 🚀"));
+app.get("/", (req, res) => res.send("HBTS Backend is running ðŸš€"));
 
 const PORT = process.env.PORT || 4000;
 
@@ -91,26 +94,34 @@ try {
   process.exit(1);
 }
 
-// ✅ Create HTTP server
+// âœ… Create HTTP server
 const server = http.createServer(app);
 
-// ✅ WS servers (manual upgrade routing - reliable for multiple WS paths)
-export const notificationWss = new WebSocketServer({ noServer: true });
+// âœ… WS servers (manual upgrade routing - reliable for multiple WS paths)
+export const notificationsWss = new WebSocketServer({ noServer: true });
+export const realtimeWss = new WebSocketServer({ noServer: true });
 export const trackingWss = new WebSocketServer({ noServer: true });
 
-// ✅ Attach handlers
-initNotificationWS(notificationWss);
+// âœ… Attach handlers
+initNotificationWS(notificationsWss);
+initRealtimeWS(realtimeWss);
 initTrackingWS(trackingWss);
 
-// ✅ Route WS upgrades by path
+// âœ… Route WS upgrades by path
 server.on("upgrade", (req, socket, head) => {
   try {
-    const url = new URL(req.url, "http://localhost");
-    const pathname = url.pathname;
+    const { pathname } = new URL(req.url, `http://${req.headers.host}`);
 
     if (pathname === "/ws/notifications") {
-      notificationWss.handleUpgrade(req, socket, head, (ws) => {
-        notificationWss.emit("connection", ws, req);
+      notificationsWss.handleUpgrade(req, socket, head, (ws) => {
+        notificationsWss.emit("connection", ws, req);
+      });
+      return;
+    }
+
+    if (pathname === "/ws/realtime") {
+      realtimeWss.handleUpgrade(req, socket, head, (ws) => {
+        realtimeWss.emit("connection", ws, req);
       });
       return;
     }
@@ -130,7 +141,7 @@ server.on("upgrade", (req, socket, head) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`ðŸš€ Server running on port ${PORT}`);
 });
 
 console.log("BOOT: starting expirePendingBookings job");

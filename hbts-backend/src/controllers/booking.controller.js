@@ -84,9 +84,8 @@ export async function createBooking(req, res) {
     const cutoffMs = depMs - CUTOFF_MINUTES * 60 * 1000; // 10 mins before
     const graceEndMs = depMs + GRACE_AFTER_MINUTES * 60 * 1000; // 5 mins after
 
-    // If we are between cutoff and graceEnd, we allow ONLY because we are still scheduled.
-    // If we are after graceEnd, block.
-    if (nowMs >= cutoffMs && nowMs > graceEndMs) {
+    // Allow before cutoff and up to graceEnd; block strictly after graceEnd
+    if (nowMs > graceEndMs) {
       await client.query("ROLLBACK");
       return res.status(400).json({ message: "Booking window closed" });
     }
@@ -480,7 +479,8 @@ export async function cancelBooking(req, res) {
     const cutoffMs = depMs - CUTOFF_MINUTES * 60 * 1000;
     const graceEndMs = depMs + GRACE_AFTER_MINUTES * 60 * 1000;
 
-    if (nowMs >= cutoffMs && nowMs > graceEndMs) {
+    // Allow up to graceEnd; block strictly after
+    if (nowMs > graceEndMs) {
       await client.query("ROLLBACK");
       return res.status(400).json({ message: "Cancel window closed" });
     }

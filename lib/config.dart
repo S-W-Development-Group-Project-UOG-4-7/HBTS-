@@ -25,4 +25,14 @@ class AppConfig {
     if (Platform.isAndroid) return "http://10.0.2.2:4000"; // ✅ emulator default
     return "http://127.0.0.1:4000";
   }
+
+static String get wsBase {
+    const override = String.fromEnvironment('WS_BASE', defaultValue: '');
+    if (override.isNotEmpty) return override;
+
+    if (kIsWeb) return "ws://localhost:4000";
+    if (Platform.isAndroid) return "ws://10.0.2.2:4000"; // emulator
+    return "ws://localhost:4000";
+  }
+
 }

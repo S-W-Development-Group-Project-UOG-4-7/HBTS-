@@ -17,37 +17,49 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   Future<void> _decide() async {
-    final loggedIn = await TokenStore.isLoggedIn();
+  final loggedIn = await TokenStore.isLoggedIn();
 
-    if (!mounted) return;
+  if (!mounted) return;
 
-    if (!loggedIn) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        AppRoutes.login,
-        (_) => false,
-      );
-      return;
-    }
-
-    final isStaff = await TokenStore.isStaff();
-
-    if (!mounted) return;
-
-    if (isStaff) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        AppRoutes.adminHome, // or dashboard route
-        (_) => false,
-      );
-    } else {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        AppRoutes.home,
-        (_) => false,
-      );
-    }
+  if (!loggedIn) {
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.login,
+      (_) => false,
+    );
+    return;
   }
+
+  // ✅ role-based routing
+  final role = await TokenStore.getRole();
+
+  if (!mounted) return;
+
+  if (role == "conductor") {
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.conductorHome,
+      (_) => false,
+    );
+    return;
+  }
+
+  if (role == "admin") {
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.adminHome,
+      (_) => false,
+    );
+    return;
+  }
+
+  // You can add operator/driver here later if needed
+  Navigator.pushNamedAndRemoveUntil(
+    context,
+    AppRoutes.home,
+    (_) => false,
+  );
+}
 
   @override
   Widget build(BuildContext context) {

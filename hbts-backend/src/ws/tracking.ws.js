@@ -14,7 +14,7 @@ const tripClients = new Map();
  */
 
 function safeSend(ws, obj) {
-  if (ws.readyState !== ws.OPEN) return;
+  if (ws.readyState !== 1) return;
   ws.send(JSON.stringify(obj));
 }
 
@@ -22,7 +22,6 @@ function safeSend(ws, obj) {
 function haversineKm(lat1, lon1, lat2, lon2) {
   const toRad = (v) => (v * Math.PI) / 180;
   const R = 6371;
-
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
 
@@ -46,6 +45,33 @@ function computeEtaSeconds({ busLat, busLon, stopLat, stopLon, speedMps }) {
   return Math.max(0, Math.round(distM / effectiveSpeed));
 }
 
+// ---------- Speed smoothing (EMA) ----------
+// tripId -> emaSpeed
+const speedEma = new Map();
+
+function smoothSpeed(tripId, speedMps) {
+  const key = String(tripId);
+
+  if (speedMps == null) return speedEma.get(key) ?? null;
+
+  const v = Number(speedMps);
+  if (!Number.isFinite(v) || v < 0) return speedEma.get(key) ?? null;
+
+  const alpha = 0.25; // smoothing factor
+  const prev = speedEma.get(key);
+  const next = prev == null ? v : alpha * v + (1 - alpha) * prev;
+  speedEma.set(key, next);
+  return next;
+}
+
+// ---------- Boarding stop state (reached/passed) ----------
+// bookingId -> { reached: boolean, passed: boolean }
+const boardingState = new Map();
+
+function distMeters(busLat, busLon, stopLat, stopLon) {
+  return haversineKm(busLat, busLon, stopLat, stopLon) * 1000;
+}
+
 // ---------- Registry helpers ----------
 function addTripClient(tripId, ws) {
   const key = String(tripId);
@@ -63,8 +89,12 @@ function removeTripClient(tripId, ws) {
 
 function removeAll(ws) {
   if (!ws.subs) return;
-  for (const tripId of ws.subs.keys()) {
+  // Remove client from all trips and clean per-booking boarding state
+  for (const [tripId, sub] of ws.subs.entries()) {
     removeTripClient(tripId, ws);
+    if (sub?.bookingId != null) {
+      boardingState.delete(Number(sub.bookingId));
+    }
   }
   ws.subs.clear();
 }
@@ -79,7 +109,7 @@ export async function broadcastTripLocation(tripId, location) {
   if (!set) return;
 
   for (const ws of set) {
-    if (ws.readyState !== ws.OPEN) continue;
+    if (ws.readyState !== 1) continue;
 
     const sub = ws.subs?.get(key);
     if (!sub?.boardingStop) {
@@ -87,12 +117,15 @@ export async function broadcastTripLocation(tripId, location) {
       continue;
     }
 
+    // Smooth speed with EMA
+    const smoothed = smoothSpeed(tripId, location.speed_mps);
+
     const etaSeconds = computeEtaSeconds({
       busLat: Number(location.lat),
       busLon: Number(location.lon),
       stopLat: Number(sub.boardingStop.lat),
       stopLon: Number(sub.boardingStop.lon),
-      speedMps: location.speed_mps,
+      speedMps: smoothed ?? location.speed_mps,
     });
 
     safeSend(ws, {
@@ -106,6 +139,33 @@ export async function broadcastTripLocation(tripId, location) {
         etaMinutes: Math.ceil(etaSeconds / 60),
       },
     });
+
+    // Boarding stop reached/passed detection (per booking)
+    const d = distMeters(
+      Number(location.lat),
+      Number(location.lon),
+      Number(sub.boardingStop.lat),
+      Number(sub.boardingStop.lon)
+    );
+    const stateKey = Number(sub.bookingId);
+    const st = boardingState.get(stateKey) ?? { reached: false, passed: false };
+
+    // Reached threshold
+    if (!st.reached && d < 60) {
+      st.reached = true;
+    }
+
+    // Passed threshold after being reached
+    if (st.reached && !st.passed && d > 250) {
+      st.passed = true;
+      safeSend(ws, {
+        type: "boarding_passed",
+        tripId: Number(tripId),
+        bookingId: sub.bookingId,
+      });
+    }
+
+    boardingState.set(stateKey, st);
   }
 }
 
@@ -171,7 +231,7 @@ export function initTrackingWS(wss) {
             WHERE b.booking_id = $1
               AND b.user_id = $2
               AND b.trip_id = $3
-              AND b.status IN ('confirmed', 'pending')
+              AND b.status IN ('confirmed')
             LIMIT 1
             `,
             [bookingId, ws.userId, tripId]
@@ -184,6 +244,9 @@ export function initTrackingWS(wss) {
 
           const row = r.rows[0];
           const key = String(tripId);
+
+          // Hygiene: reset boarding reached/passed state on (re)subscribe
+          boardingState.delete(bookingId);
 
           ws.subs.set(key, {
             bookingId,
@@ -228,6 +291,12 @@ export function initTrackingWS(wss) {
         if (msg.type === "unsubscribe") {
           const tripId = String(msg.tripId ?? "");
           if (!tripId) return;
+
+          // Clean boarding state for this subscription (if present)
+          const sub = ws.subs?.get(tripId);
+          if (sub?.bookingId != null) {
+            boardingState.delete(Number(sub.bookingId));
+          }
 
           removeTripClient(tripId, ws);
           ws.subs?.delete(tripId);
