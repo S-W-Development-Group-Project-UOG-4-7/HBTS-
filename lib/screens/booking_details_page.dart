@@ -4,6 +4,7 @@ import '../api/seat_api.dart';
 import '../models/my_booking_item.dart';
 import '../models/seat_model.dart';
 import '../models/trip_model.dart';
+import 'booking_qr_page.dart';
 import 'edit_seat_page.dart';
 
 class BookingDetailsPage extends StatefulWidget {
@@ -98,6 +99,26 @@ class _BookingDetailsPageState extends State<BookingDetailsPage> {
               : SeatMapFromSeats(seats: _seats, mySeatId: _seatId),
 
           const SizedBox(height: 16),
+
+          if ((b.qrCode ?? "").trim().isNotEmpty) ...[
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.qr_code),
+                label: const Text("Show QR"),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BookingQrPage(qrText: b.qrCode!.trim()),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
 
           if (_canEdit) ...[
             SizedBox(

@@ -1,10 +1,7 @@
 // src/controllers/trip.controller.js
 import { pool } from "../db.js";
 import { expirePendingBookingsOnce } from "../jobs/expirePendingBookings.job.js";
-<<<<<<< HEAD
-=======
 import { emitTripStarted } from "../ws/realtime.ws.js";
->>>>>>> d7249bdd1a77b7faee6d01ff9d46dbdf7ba288de
 import { broadcastTripLocation } from "../ws/tracking.ws.js";
 
 
@@ -150,7 +147,6 @@ export async function getTripSeats(req, res) {
   }
 }
 
-<<<<<<< HEAD
 export async function pushTripLocation(req, res) {
   try {
     const tripId = Number(req.params.id);
@@ -239,7 +235,6 @@ export async function pushTripLocation(req, res) {
     return res.status(500).json({ message: "Server error" });
   }
 }
-=======
 export async function startTrip(req, res) {
   const tripId = Number(req.params.id);
   if (!Number.isFinite(tripId)) {

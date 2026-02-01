@@ -16,6 +16,7 @@ class MyBookingItem {
   final DateTime arrivalTime;
 
   final DateTime bookingTime;
+  final String? qrCode;
 
   MyBookingItem({
     required this.bookingId,
@@ -31,6 +32,7 @@ class MyBookingItem {
     required this.departureTime,
     required this.arrivalTime,
     required this.bookingTime,
+    this.qrCode,
   });
 
   factory MyBookingItem.fromJson(Map<String, dynamic> j) {
@@ -48,16 +50,13 @@ class MyBookingItem {
       departureTime: DateTime.parse(j["departure_time"] as String),
       arrivalTime: DateTime.parse(j["arrival_time"] as String),
       bookingTime: DateTime.parse(j["booking_time"] as String),
+      qrCode: (j["qr_code"] as String?),
     );
   }
 
   String get routeText => routeName.isNotEmpty ? routeName : "$fromLocation → $toLocation";
 
   bool get isHistory {
-<<<<<<< HEAD
-    final t = tripStatus.toLowerCase();
-    return t == "cancelled" || t == "completed";
-=======
     final t = tripStatus.toLowerCase().trim();
     final now = DateTime.now();
 
@@ -70,6 +69,5 @@ class MyBookingItem {
     }
 
     return false;
->>>>>>> d7249bdd1a77b7faee6d01ff9d46dbdf7ba288de
   }
 }

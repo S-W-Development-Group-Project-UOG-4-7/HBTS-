@@ -24,13 +24,6 @@ import conductorRoutes from "./routes/conductor.routes.js";
 import routeRoutes from "./routes/route.routes.js";
 
 import { startExpirePendingBookingsJob } from "./jobs/expirePendingBookings.job.js";
-import notificationRoutes from "./routes/notification.routes.js";
-
-import { initNotificationWS } from "./ws/notification.ws.js";
-import { initTrackingWS } from "./ws/tracking.ws.js";
-
-import routeRoutes from "./routes/route.routes.js";
-
 
 // ✅ WS handlers
 import { initNotificationWS } from "./ws/notification.ws.js";

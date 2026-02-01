@@ -12,8 +12,6 @@ import 'state/active_trip_store.dart';
 import 'services/realtime_ws.dart';
 import 'services/token_store.dart';
 
-
->>>>>>> d7249bdd1a77b7faee6d01ff9d46dbdf7ba288de
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() {
@@ -23,17 +21,14 @@ void main() {
         ChangeNotifierProvider(
           create: (_) => NotificationStore()..refresh(),
         ),
-
-        // ✅ NEW: Conductor Home state
+        // NEW: Conductor Home state
         ChangeNotifierProvider(
           create: (_) => ConductorStore(),
         ),
-
-        // ✅ NEW: Active Trip state (bookings, filters, counters)
+        // NEW: Active Trip state (bookings, filters, counters)
         ChangeNotifierProvider(
           create: (_) => ActiveTripStore(),
         ),
-
         Provider(
           create: (_) => RealtimeWsService(),
           dispose: (_, ws) => ws.dispose(),
@@ -61,14 +56,14 @@ class _HBTSAppState extends State<HBTSApp> {
     if (_wired) return;
     _wired = true;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final store = context.read<NotificationStore>();
 
-      // ✅ start websocket realtime after first frame
+      // Start websocket realtime after first frame
       store.startRealtime();
       store.startPolling(interval: const Duration(seconds: 3));
 
-      // ✅ listen for popup events
+      // Listen for popup events
       _sub = store.incomingStream.listen((n) {
         final ctx = navigatorKey.currentContext;
         if (ctx == null) return;
@@ -80,6 +75,32 @@ class _HBTSAppState extends State<HBTSApp> {
           onTap: () => Navigator.pushNamed(ctx, AppRoutes.notifications),
         );
       });
+
+      final ws = context.read<RealtimeWsService>();
+      final activeTripStore = context.read<ActiveTripStore>();
+
+      final role = await TokenStore.getRole();
+      if (role == "conductor") {
+        await ws.connect();
+
+        ws.events.listen((ev) async {
+          if (ev.isTripStarted) {
+            // Refresh so active trip card appears + bookings load
+            await activeTripStore.loadActiveTripAndBookings();
+            return;
+          }
+
+          if (ev.isTripEnded) {
+            activeTripStore.requestTripClosedDialog(reason: "ended");
+            return;
+          }
+
+          if (ev.isTripCancelled) {
+            activeTripStore.requestTripClosedDialog(reason: "cancelled");
+            return;
+          }
+        });
+      }
     });
   }
 

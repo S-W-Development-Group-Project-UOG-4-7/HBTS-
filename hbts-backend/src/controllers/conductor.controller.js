@@ -103,6 +103,7 @@ async function mustGetBookingForConductor(client, { bookingId, userId, tripIdHin
       b.boarded_at,
       b.boarded_by,
 
+      b.qr_code,
       b.qr_scanned_at,
       b.last_scanned_by,
       b.verification_source,
@@ -351,12 +352,13 @@ export async function getTripBookings(req, res) {
         b.paid_at,
         b.paid_by,
 
-        b.boarded_at,
-        b.boarded_by,
+      b.boarded_at,
+      b.boarded_by,
 
-        b.qr_scanned_at,
-        b.last_scanned_by,
-        b.verification_source
+      b.qr_code,
+      b.qr_scanned_at,
+      b.last_scanned_by,
+      b.verification_source
 
       FROM bookings b
       JOIN trips t ON t.trip_id = b.trip_id
@@ -482,6 +484,7 @@ export async function verifyScan(req, res) {
         paid_by: b.paid_by ?? null,
         boarded_at: b.boarded_at ?? null,
         boarded_by: b.boarded_by ?? null,
+        qr_code: b.qr_code ?? null,
         qr_scanned_at: b.qr_scanned_at ?? null,
       },
       flags: {

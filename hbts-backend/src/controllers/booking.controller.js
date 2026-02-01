@@ -507,7 +507,6 @@ export async function cancelBooking(req, res) {
   }
 }
 
-<<<<<<< HEAD
 export async function getBookingTracking(req, res) {
   try {
     const userId = req.user?.id;
@@ -556,4 +555,98 @@ export async function getBookingTracking(req, res) {
   }
 }
 
+export async function scanBookingQr(req, res) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
+    // Optional: restrict to conductor/admin
+    // if (!["conductor", "admin"].includes(req.user?.role)) {
+    //   return res.status(403).json({ message: "Forbidden" });
+    // }
+
+    const { qrText } = req.body;
+    if (!qrText) return res.status(400).json({ message: "qrText is required" });
+
+    // 1) Parse QR payload
+    let payload;
+    try {
+      payload = typeof qrText === "string" ? JSON.parse(qrText) : qrText;
+    } catch {
+      return res.status(400).json({ message: "Invalid QR format" });
+    }
+
+    const bookingId = Number(payload.bid);
+    const sig = String(payload.sig || "");
+
+    if (!bookingId || !sig) {
+      return res.status(400).json({ message: "Invalid QR payload (bid, sig required)" });
+    }
+
+    // 2) Load booking + qr_secret (qr_secret must exist in DB)
+    const bRes = await pool.query(
+      `
+      SELECT
+        booking_id,
+        user_id,
+        trip_id,
+        seat_id,
+        boarding_stop_id,
+        dropping_stop_id,
+        status,
+        payment_status,
+        qr_secret
+      FROM bookings
+      WHERE booking_id = $1
+      LIMIT 1
+      `,
+      [bookingId]
+    );
+
+    if (bRes.rowCount === 0) return res.status(404).json({ message: "Booking not found" });
+
+    const b = bRes.rows[0];
+
+    if (!b.qr_secret) {
+      return res.status(500).json({ message: "Booking QR secret missing (DB not configured)" });
+    }
+
+    // 3) Verify signature: HMAC_SHA256(booking_id, qr_secret)
+    const expected = crypto
+      .createHmac("sha256", b.qr_secret)
+      .update(String(b.booking_id))
+      .digest("hex");
+
+    if (expected !== sig) {
+      return res.status(401).json({ message: "QR verification failed" });
+    }
+
+    // 4) Update scan metadata (you already have these columns)
+    await pool.query(
+      `
+      UPDATE bookings
+      SET
+        qr_scanned_at = NOW(),
+        last_scanned_by = $2,
+        verification_source = 'qr'
+      WHERE booking_id = $1
+      `,
+      [b.booking_id, userId]
+    );
+
+    // 5) Return CURRENT booking data (always latest)
+    return res.json({
+      booking_id: b.booking_id,
+      trip_id: b.trip_id,
+      passenger_user_id: b.user_id,
+      seat_id: b.seat_id,
+      boarding_stop_id: b.boarding_stop_id,
+      dropping_stop_id: b.dropping_stop_id,
+      status: b.status,
+      payment_status: b.payment_status,
+    });
+  } catch (err) {
+    console.error("scanBookingQr error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+}

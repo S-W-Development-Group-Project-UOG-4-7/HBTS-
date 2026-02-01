@@ -1,18 +1,10 @@
 // src/routes/trip.routes.js
 import { Router } from "express";
-<<<<<<< HEAD
-=======
-
->>>>>>> d7249bdd1a77b7faee6d01ff9d46dbdf7ba288de
 import {
   searchTrips,
   getTripById,
   getTripSeats,
-<<<<<<< HEAD
   pushTripLocation,
-} from "../controllers/trip.controller.js";
-
-=======
   startTrip,
   endTrip,
   cancelTrip, 
@@ -21,7 +13,6 @@ import {
 import { requireAuth } from "../middleware/auth.middleware.js"; // ✅ correct file
 import { requireRole } from "../middleware/requireRole.js";      // ✅ correct file
 
-import { requireAuth } from "../middleware/auth.middleware.js";
 
 const router = Router();
 

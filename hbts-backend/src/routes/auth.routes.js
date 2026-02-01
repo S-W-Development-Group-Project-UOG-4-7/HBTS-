@@ -41,14 +41,13 @@ router.post(
 
 // ADMIN ROUTES
 router.post("/admin/login", adminLogin);
-router.post("/admin/login/verify-otp", 
-
+router.post(
+  "/admin/login/verify-otp",
   requireTempToken,
   adminVerifyLoginOtp
 );
 router.get("/me", requireAuth, getMe);
  
-
 export default router;
 
 

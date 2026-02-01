@@ -258,61 +258,6 @@ class _MiniPill extends StatelessWidget {
   }
 }
 
-class _BookingCard extends StatelessWidget {
-  final MyBookingItem item;
-  final VoidCallback onTap;
-
-  const _BookingCard({required this.item, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final uiStatus = mapUiStatus(item);
-
-    final dt = item.departureTime;
-    final dateTimeText =
-        "${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} · ${_time(dt)}";
-
-    return Card(
-      elevation: 3,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(item.routeText,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    Text(dateTimeText, style: TextStyle(color: Colors.grey.shade700)),
-                    const SizedBox(height: 6),
-                    Text("Seat: ${item.seatLabel}",
-                        style: const TextStyle(fontWeight: FontWeight.w800)),
-                  ],
-                ),
-              ),
-              _StatusBadge(status: uiStatus),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _time(DateTime dt) {
-    final h = dt.hour;
-    final hh = (h % 12 == 0) ? 12 : (h % 12);
-    final mm = dt.minute.toString().padLeft(2, '0');
-    final ampm = h >= 12 ? "PM" : "AM";
-    return "$hh:$mm $ampm";
-  }
-}
 
 class _StatusBadge extends StatelessWidget {
   final BookingStatusUI status;

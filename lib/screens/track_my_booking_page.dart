@@ -34,6 +34,7 @@ class _TrackMyBookingPageState extends State<TrackMyBookingPage> {
   DateTime? _lastGpsAt;
 
   Map<String, dynamic>? _snapshot;
+  String? _tripStatus;
 
   // Google Map state
   GoogleMapController? _mapCtrl;
@@ -79,6 +80,24 @@ class _TrackMyBookingPageState extends State<TrackMyBookingPage> {
     if (s.isEmpty) return null;
     final fixed = s.endsWith('Z') ? s : '${s}Z';
     return DateTime.tryParse(fixed);
+  }
+
+  String? _normalizeStatus(dynamic v) {
+    if (v == null) return null;
+    final s = v.toString().trim().toLowerCase();
+    return s.isEmpty ? null : s;
+  }
+
+  bool get _tripStarted {
+    final s = _tripStatus;
+    if (s == null) return true;
+    return s == "running" || s == "started";
+  }
+
+  bool get _tripNotStarted {
+    final s = _tripStatus;
+    if (s == null) return false;
+    return s == "scheduled" || s == "pending" || s == "created";
   }
 
   bool get _isStale {
@@ -260,6 +279,9 @@ class _TrackMyBookingPageState extends State<TrackMyBookingPage> {
       final tripId = (snap['trip_id'] as num).toInt();
       _tripId = tripId;
       _snapshot = snap;
+      _tripStatus = _normalizeStatus(
+        snap['trip_status'] ?? snap['tripStatus'] ?? snap['trip_state'] ?? snap['status'],
+      );
 
       _boardingName = (snap['boarding_stop_name'] ?? "Boarding").toString();
       _droppingName = (snap['dropping_stop_name'] ?? "Dropping").toString();
@@ -284,6 +306,17 @@ class _TrackMyBookingPageState extends State<TrackMyBookingPage> {
       final encoded = await _fetchTripPolyline(tripId);
       if (encoded != null && encoded.isNotEmpty) {
         _setRoutePolyline(encoded);
+      }
+
+      if (_tripNotStarted) {
+        setState(() => _loading = false);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!_didFitOnce) {
+            _didFitOnce = true;
+            _fitToAll();
+          }
+        });
+        return;
       }
 
       // 2) WebSocket connect + subscribe
@@ -393,7 +426,27 @@ class _TrackMyBookingPageState extends State<TrackMyBookingPage> {
           ),
         ],
       ),
-      body: _loading
+      body: widget.bookingId == null
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      "Missing bookingId. Please open this screen from a specific booking.",
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("Back"),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(child: Text(_error!))
@@ -401,7 +454,51 @@ class _TrackMyBookingPageState extends State<TrackMyBookingPage> {
                   padding: const EdgeInsets.all(12),
                   child: Column(
                     children: [
-                      if (_isStale)
+                      if (_tripNotStarted)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.schedule, size: 18),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  "Trip has not started yet. You still have time.",
+                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      if (!_tripNotStarted)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.directions_bus, size: 18),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  "Bus has started the trip and is on the way.",
+                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      if (_tripStarted && _isStale)
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(12),

@@ -43,7 +43,15 @@ class _TrackMyBookingListPageState extends State<TrackMyBookingListPage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _current.isEmpty
-              ? const SizedBox.shrink() // ✅ show nothing if no bookings
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                      "Currently no bookings to track.",
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                )
               : ListView.builder(
                   padding: const EdgeInsets.all(12),
                   itemCount: _current.length,
@@ -57,15 +65,14 @@ class _TrackMyBookingListPageState extends State<TrackMyBookingListPage> {
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         subtitle: Text(
-                          "Seat ${b.seatLabel} • ${_fmtDate(b.departureTime)}",
+                          "Seat ${b.seatLabel} - ${_fmtDate(b.departureTime)}",
                         ),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  TrackMyBookingPage(bookingId: b.bookingId),
+                              builder: (_) => TrackMyBookingPage(bookingId: b.bookingId),
                             ),
                           );
                         },
@@ -80,6 +87,6 @@ class _TrackMyBookingListPageState extends State<TrackMyBookingListPage> {
     final h = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
     final m = dt.minute.toString().padLeft(2, '0');
     final ampm = dt.hour >= 12 ? "PM" : "AM";
-    return "${dt.day}/${dt.month}/${dt.year} • $h:$m $ampm";
+    return "${dt.day}/${dt.month}/${dt.year} - $h:$m $ampm";
   }
 }
