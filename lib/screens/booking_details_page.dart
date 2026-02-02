@@ -21,10 +21,12 @@ class _BookingDetailsPageState extends State<BookingDetailsPage> {
 
   late int _seatId;
   late String _seatLabel;
+  late MyBookingItem _b;
 
   @override
   void initState() {
     super.initState();
+    _b = widget.item;
     _seatId = widget.item.seatId;
     _seatLabel = widget.item.seatLabel;
     _loadSeats();
@@ -73,7 +75,7 @@ class _BookingDetailsPageState extends State<BookingDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final b = widget.item;
+    final b = _b;
     final trip = _tripFromItem(b);
 
     return Scaffold(
@@ -84,6 +86,8 @@ class _BookingDetailsPageState extends State<BookingDetailsPage> {
           Text(b.routeText, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 6),
           Text("Seat: $_seatLabel"),
+          const SizedBox(height: 6),
+          Text("Boarding: ${b.boardingStopName.isNotEmpty ? b.boardingStopName : b.boardingStopId}"),
           const SizedBox(height: 6),
           Text("Departure: ${b.departureTime}"),
           const SizedBox(height: 16),
@@ -121,6 +125,82 @@ class _BookingDetailsPageState extends State<BookingDetailsPage> {
           ],
 
           if (_canEdit) ...[
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.place),
+                label: const Text("Change Boarding Stop"),
+                onPressed: () async {
+                  try {
+                    final stops = await BookingApi.getChangeableBoardingStops(
+                      bookingId: b.bookingId,
+                    );
+
+                    if (!mounted) return;
+
+                    if (stops.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("No boarding stops available to change right now."),
+                        ),
+                      );
+                      return;
+                    }
+
+                    final pickedStopId = await showModalBottomSheet<int>(
+                      context: context,
+                      builder: (_) => ListView(
+                        children: [
+                          const ListTile(
+                            title: Text(
+                              "Select Boarding Stop",
+                              style: TextStyle(fontWeight: FontWeight.w900),
+                            ),
+                          ),
+                          const Divider(height: 1),
+                          ...stops.map((s) {
+                            final id = (s["stop_id"] as num).toInt();
+                            final name = (s["stop_name"] ?? "Stop $id").toString();
+                            return ListTile(
+                              title: Text(name),
+                              subtitle: Text("Stop ID: $id"),
+                              onTap: () => Navigator.pop(context, id),
+                            );
+                          }),
+                        ],
+                      ),
+                    );
+
+                    if (pickedStopId == null) return;
+
+                    await BookingApi.changeBoardingStop(
+                      bookingId: b.bookingId,
+                      boardingStopId: pickedStopId,
+                    );
+
+                    final all = await BookingApi.getMyBookings();
+                    final updated =
+                        all.firstWhere((x) => x.bookingId == _b.bookingId, orElse: () => _b);
+                    if (!mounted) return;
+                    setState(() => _b = updated);
+
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Boarding stop updated")),
+                    );
+
+                    // optional: pop & refresh bookings list OR update UI if you store stop name locally
+                  } catch (e) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Change boarding stop failed: $e")),
+                    );
+                  }
+                },
+              ),
+            ),
+            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               height: 54,

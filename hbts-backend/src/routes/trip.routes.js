@@ -8,6 +8,7 @@ import {
   startTrip,
   endTrip,
   cancelTrip, 
+  getTripBoardingStops
 } from "../controllers/trip.controller.js";
 
 import { requireAuth } from "../middleware/auth.middleware.js"; // ✅ correct file
@@ -24,10 +25,10 @@ router.get("/:id", getTripById);
 
 // /api/trips/:id/seats
 router.get("/:id/seats", getTripSeats);
+
+router.get("/:id/boardin-stops",getTripBoardingStops);
+
 router.post("/:id/location", requireAuth, pushTripLocation);
-
-
-
 router.post("/:id/start", requireAuth, requireRole(["driver", "admin", "operator"]), startTrip);
 router.post("/:id/end", requireAuth, requireRole(["driver", "admin", "operator"]), endTrip);
 router.post("/:id/cancel", requireAuth, requireRole(["driver", "admin", "operator"]), cancelTrip);

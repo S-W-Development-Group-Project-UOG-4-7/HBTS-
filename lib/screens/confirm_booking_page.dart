@@ -25,9 +25,8 @@ class ConfirmBookingPage extends StatefulWidget {
 class _ConfirmBookingPageState extends State<ConfirmBookingPage> {
   bool _loading = false;
 
-  // TODO later: load from trip stops API
-  int boardingStopId = 4; // Colombo
-  int droppingStopId = 6; // Kandy
+  // ✅ Boarding stop is optional now. If null -> backend defaults to first stop (bus stand)
+  int? boardingStopId;
 
   String paidVia = "online"; // "online" | "cash"
 
@@ -41,8 +40,7 @@ class _ConfirmBookingPageState extends State<ConfirmBookingPage> {
         lastBookingId = await BookingApi.createBooking(
           tripId: widget.args.trip.id,
           seatId: seatId,
-          boardingStopId: boardingStopId,
-          droppingStopId: droppingStopId,
+          boardingStopId: boardingStopId, // ✅ can be null (skip)
           paidVia: paidVia,
         );
       }
@@ -112,9 +110,59 @@ class _ConfirmBookingPageState extends State<ConfirmBookingPage> {
                   ),
 
                   const SizedBox(height: 12),
-                  Text(
-                    "Boarding stopId: $boardingStopId | Dropping stopId: $droppingStopId",
-                    style: TextStyle(color: Colors.grey.shade700),
+
+                  // ✅ Temporary UI until we plug TripApi.getBoardingStops + map
+                  // "Skip" means null -> backend defaults to bus stand
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          boardingStopId == null
+                              ? "Boarding stop: (Skipped → default bus stand)"
+                              : "Boarding stopId: $boardingStopId",
+                          style: TextStyle(color: Colors.grey.shade700),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _loading
+                            ? null
+                            : () {
+                                setState(() => boardingStopId = null);
+                              },
+                        child: const Text("Skip"),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.place),
+                      label: const Text("Select boarding stop (temporary)"),
+                      onPressed: _loading
+                          ? null
+                          : () async {
+                              // TEMP: just a demo picker until you load from API
+                              final picked = await showDialog<int>(
+                                context: context,
+                                builder: (_) => SimpleDialog(
+                                  title: const Text("Pick boarding stop (TEMP)"),
+                                  children: [
+                                    SimpleDialogOption(
+                                      onPressed: () => Navigator.pop(context, 4),
+                                      child: const Text("Stop 4"),
+                                    ),
+                                    SimpleDialogOption(
+                                      onPressed: () => Navigator.pop(context, 5),
+                                      child: const Text("Stop 5"),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (picked != null) setState(() => boardingStopId = picked);
+                            },
+                    ),
                   ),
                 ],
               ),

@@ -434,4 +434,30 @@ export async function cancelTrip(req, res) {
   }
 }
 
+// GET /api/trips/:id/boarding-stops
+export async function getTripBoardingStops(req, res) {
+  try {
+    const tripId = Number(req.params.id);
+    if (!tripId) return res.status(400).json({ message: "Invalid tripId" });
+
+    const r = await pool.query(`
+      SELECT
+        ts.stop_id,
+        s.stop_name,
+        s.lat,
+        s.lon,
+        ts.stop_order
+      FROM trip_stops ts
+      JOIN stops s ON s.stop_id = ts.stop_id
+      WHERE ts.trip_id = $1
+        AND ts.is_boarding_allowed = true
+      ORDER BY ts.stop_order ASC
+    `, [tripId]);
+
+    return res.json(r.rows);
+  } catch (err) {
+    console.error("getTripBoardingStops error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
 

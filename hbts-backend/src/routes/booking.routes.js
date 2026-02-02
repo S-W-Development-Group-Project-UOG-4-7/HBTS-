@@ -7,6 +7,8 @@ import {
   cancelBooking,
   getBookingTracking,
   scanBookingQr,
+  getChangeableBoardingStops,
+  changeBookingBoardingStop,
 } from "../controllers/booking.controller.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
 
@@ -23,5 +25,8 @@ router.get("/:bookingId/tracking", requireAuth, getBookingTracking);
 
 // ✅ Conductor scans QR -> verify -> get latest booking details
 router.post("/scan", requireAuth, scanBookingQr);   
+
+router.get("/:bookingId/boarding-stops", requireAuth, getChangeableBoardingStops);
+router.patch("/:bookingId/boarding-stop", requireAuth, changeBookingBoardingStop);
 
 export default router;
