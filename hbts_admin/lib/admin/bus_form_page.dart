@@ -276,7 +276,7 @@ class _BusFormPageState extends State<BusFormPage> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int?>(
-                  value: _selectedConductorId,
+                  initialValue: _selectedConductorId,
                   items: [
                     const DropdownMenuItem<int?>(
                       value: null,

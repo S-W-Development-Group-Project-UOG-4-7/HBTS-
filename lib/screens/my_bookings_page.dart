@@ -3,10 +3,6 @@ import '../api/booking_api.dart';
 import '../models/my_booking_item.dart';
 import 'booking_details_page.dart';
 
-<<<<<<< HEAD
-class MyBookingsPage extends StatelessWidget {
-  const MyBookingsPage({super.key});
-=======
 enum BookingStatusUI { scheduled, cancelled, onboard, completed }
 
 BookingStatusUI mapUiStatus(MyBookingItem b) {
@@ -21,7 +17,7 @@ BookingStatusUI mapUiStatus(MyBookingItem b) {
     return BookingStatusUI.completed;
   }
 
-  // If passenger-side stale → show as completed
+  // If passenger-side stale -> show as completed
   if ((trip == "running" || trip == "started")) {
     final staleAt = b.arrivalTime.add(const Duration(hours: 24));
     if (DateTime.now().isAfter(staleAt)) {
@@ -66,7 +62,6 @@ class _PassengerBookingsPageState extends State<PassengerBookingsPage> {
       setState(() => _loading = false);
     }
   }
->>>>>>> 07412e1203042fbfa2a74db4f898a950bbd6509e
 
   @override
   Widget build(BuildContext context) {
@@ -109,6 +104,15 @@ class _PassengerBookingsPageState extends State<PassengerBookingsPage> {
                   ),
       ),
     );
+  }
+}
+
+class MyBookingsPage extends StatelessWidget {
+  const MyBookingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const PassengerBookingsPage();
   }
 }
 
@@ -164,7 +168,7 @@ class _BookingCard extends StatelessWidget {
 
     final dt = item.departureTime.toLocal();
     final dateTimeText =
-        "${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} · ${_time(dt)}";
+        "${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} - ${_time(dt)}";
 
     final theme = Theme.of(context);
     final bg = theme.colorScheme.surfaceContainerHighest;
@@ -219,7 +223,7 @@ class _BookingCard extends StatelessWidget {
                     runSpacing: 8,
                     children: [
                       _MiniPill(text: "Seat: ${item.seatLabel}"),
-                      // You can add more pills later: price, boarding stop, etc.
+                      // Add more pills later: price, boarding stop, etc.
                     ],
                   )
                 ],
@@ -292,4 +296,3 @@ class _StatusBadge extends StatelessWidget {
     );
   }
 }
-

@@ -40,9 +40,6 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
     });
   }
 
-  String _safeStr(dynamic v) => (v == null) ? "-" : v.toString();
-
-
   Future<void> _changeTripStatus(int tripId, String status) async {
     try {
       await OperatorApi.updateTripStatus(tripId: tripId, status: status);
@@ -397,7 +394,7 @@ class _AssignedTripsSection extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: statusColor(status).withOpacity(0.12),
+                            color: statusColor(status).withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(

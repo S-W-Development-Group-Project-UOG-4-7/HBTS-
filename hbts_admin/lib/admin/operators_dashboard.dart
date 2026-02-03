@@ -192,7 +192,7 @@ class _OperatorsDashboardState extends State<OperatorsDashboard> {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           child: DropdownButtonFormField<int?>(
-                            value: _selectedCompanyId,
+                            initialValue: _selectedCompanyId,
                             items: [
                               const DropdownMenuItem<int?>(
                                 value: null,

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
-import 'signup_page.dart';
+import '../admin/dashboard.dart';
+import '../operator/operator_start_page.dart';
 import '../services/auth_api.dart';
 import '../services/token_store.dart';
-import 'otp_page.dart';
 import 'home_page.dart';
-import '../admin/dashboard.dart';
+import 'otp_page.dart';
+import 'signup_page.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,7 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
-  // ✅ NEW: operator toggle
+  // Operator toggle
   bool _loginAsOperator = false;
 
   @override
@@ -100,7 +101,6 @@ class _LoginScreenState extends State<LoginScreen> {
       // Unified login uses a single OTP flow
       final otpFlow = OtpFlow.login2fa;
 
-
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -171,7 +171,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // ✅ NEW: Operator toggle
+                    // Operator toggle
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -245,7 +245,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                         return null;
                       },
-
                     ),
 
                     const SizedBox(height: 20),

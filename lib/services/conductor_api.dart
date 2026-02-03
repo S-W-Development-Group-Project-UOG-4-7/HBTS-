@@ -129,9 +129,9 @@ class ConductorApi {
     final qp = <String, String>{
       "page": "$page",
       "limit": "$limit",
-      if (status != null && status.trim().isNotEmpty) "status": status.trim(),
-      if (payment != null && payment.trim().isNotEmpty) "payment": payment.trim(),
-      if (q != null && q.trim().isNotEmpty) "q": q.trim(),
+      if (status?.trim().isNotEmpty ?? false) "status": status!.trim(),
+      if (payment?.trim().isNotEmpty ?? false) "payment": payment!.trim(),
+      if (q?.trim().isNotEmpty ?? false) "q": q!.trim(),
     };
 
     final uri = Uri.parse("$_base/trips/$tripId/bookings").replace(queryParameters: qp);
@@ -167,10 +167,12 @@ class ConductorApi {
     required String qr,
     int? tripId,
   }) async {
-    return _postJson("$_base/scan/verify", {
+    final body = <String, dynamic>{
       "qr": qr,
-      if (tripId != null) "tripId": tripId,
-    });
+      "tripId": tripId,
+    };
+    body.removeWhere((_, v) => v == null);
+    return _postJson("$_base/scan/verify", body);
   }
 
   /// Backend expects: { qr, tripId?, source?, collectCash?, amount?, clientActionId? }
@@ -182,14 +184,16 @@ class ConductorApi {
     double? amount,
     String? clientActionId,
   }) async {
-    return _postJson("$_base/scan/commit", {
+    final body = <String, dynamic>{
       "qr": qr,
-      if (tripId != null) "tripId": tripId,
+      "tripId": tripId,
       "source": source,
       "collectCash": collectCash,
-      if (amount != null) "amount": amount,
-      if (clientActionId != null) "clientActionId": clientActionId,
-    });
+      "amount": amount,
+      "clientActionId": clientActionId,
+    };
+    body.removeWhere((_, v) => v == null);
+    return _postJson("$_base/scan/commit", body);
   }
 
   // -------------------------
@@ -213,10 +217,12 @@ class ConductorApi {
     required String clientActionId,
     double? amount,
   }) async {
-    await _postJson("$_base/bookings/$bookingId/pay-cash", {
+    final body = <String, dynamic>{
       "tripId": tripId,
       "clientActionId": clientActionId,
-      if (amount != null) "amount": amount,
-    });
+      "amount": amount,
+    };
+    body.removeWhere((_, v) => v == null);
+    await _postJson("$_base/bookings/$bookingId/pay-cash", body);
   }
 }

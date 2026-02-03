@@ -1,10 +1,12 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
+
 import '../config.dart';
 
 class AuthApi {
   // Helper to build URLs
-  static Uri _u(String path) => Uri.parse("${AppConfig.baseUrl}/api$path");
+  static Uri _u(String path) => Uri.parse("${AppConfig.baseUrl}$path");
 
   // Safe JSON decode
   static Map<String, dynamic> _decode(http.Response res) {
@@ -120,7 +122,7 @@ class AuthApi {
     required String password,
   }) async {
     final res = await http.post(
-      _u("/api/auth/admin/login"), // ✅ FIXED (was missing /api)
+      _u("/api/auth/admin/login"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "email": email,
@@ -160,7 +162,7 @@ class AuthApi {
   }
 
   // =====================================================
-  // ✅ UNIFIED LOGIN (ALL ROLES)
+  // UNIFIED LOGIN (ALL ROLES)
   // POST /api/auth/login
   // =====================================================
   static Future<Map<String, dynamic>> unifiedLogin({
@@ -182,7 +184,7 @@ class AuthApi {
   }
 
   // =====================================================
-  // ✅ UNIFIED VERIFY LOGIN OTP
+  // UNIFIED VERIFY LOGIN OTP
   // POST /api/auth/login/verify-otp
   // =====================================================
   static Future<Map<String, dynamic>> verifyUnifiedLoginOtp({
@@ -207,7 +209,3 @@ class AuthApi {
     throw Exception(body["message"] ?? "Unified OTP verification failed");
   }
 }
-<<<<<<< HEAD
-  
-=======
->>>>>>> 07412e1203042fbfa2a74db4f898a950bbd6509e

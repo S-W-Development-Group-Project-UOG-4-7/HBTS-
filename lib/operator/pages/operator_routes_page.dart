@@ -76,6 +76,7 @@ class _OperatorRoutesPageState extends State<OperatorRoutesPage> {
       },
     );
 
+    if (!mounted) return;
     if (created != true) return;
 
     if (nameCtrl.text.trim().isEmpty ||

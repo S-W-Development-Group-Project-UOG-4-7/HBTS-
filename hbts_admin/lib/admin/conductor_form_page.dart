@@ -212,7 +212,7 @@ class _ConductorFormPageState extends State<ConductorFormPage> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int>(
-                  value: _selectedCompanyId,
+                  initialValue: _selectedCompanyId,
                   items: _companies
                       .map(
                         (c) => DropdownMenuItem<int>(
@@ -249,7 +249,7 @@ class _ConductorFormPageState extends State<ConductorFormPage> {
                   ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int?>(
-                  value: _selectedBusId,
+                  initialValue: _selectedBusId,
                   items: _buses
                       .map(
                         (b) => DropdownMenuItem<int?>(

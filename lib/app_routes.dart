@@ -1,33 +1,24 @@
 import 'package:flutter/material.dart';
 
-import 'screens/home_page.dart';
-import 'screens/login_page.dart';
-import 'screens/profile_page.dart';
-import 'screens/schedule_page.dart';
-import 'screens/my_bookings_page.dart';
-import 'screens/track_my_booking_page.dart';
-import 'screens/track_bus_page.dart';
-<<<<<<< HEAD
-import 'operator/operator_start_page.dart';
-=======
-import 'screens/notifications_page.dart';
-
-<<<<<<< HEAD
->>>>>>> 07412e1203042fbfa2a74db4f898a950bbd6509e
-
-=======
+import 'admin/dashboard.dart';
+import 'conductor/conductor_active_trip_page.dart';
+import 'conductor/conductor_booking_details_page.dart';
+import 'conductor/conductor_bookings_page.dart';
 import 'conductor/conductor_shell.dart';
 import 'conductor/scan_qr_page.dart';
-import 'conductor/conductor_active_trip_page.dart';
-import 'conductor/conductor_bookings_page.dart';
-import 'conductor/conductor_booking_details_page.dart';
->>>>>>> minanga
-import 'screens/trip_details_page.dart';
-import 'screens/seat_selection_page.dart';
-import 'screens/confirm_booking_page.dart';
+import 'operator/operator_start_page.dart';
 import 'screens/booking_success_page.dart';
-import 'admin/dashboard.dart';
-
+import 'screens/confirm_booking_page.dart';
+import 'screens/home_page.dart';
+import 'screens/login_page.dart';
+import 'screens/my_bookings_page.dart';
+import 'screens/notifications_page.dart';
+import 'screens/profile_page.dart';
+import 'screens/schedule_page.dart';
+import 'screens/seat_selection_page.dart';
+import 'screens/track_bus_page.dart';
+import 'screens/track_my_booking_page.dart';
+import 'screens/trip_details_page.dart';
 
 class AppRoutes {
   static const login = '/login';
@@ -46,7 +37,6 @@ class AppRoutes {
   static const conductorBookingDetails = '/conductor/booking-details';
   static const upcomingToday = '/upcoming-today';
 
-
   static const tripDetails = '/trip-details';
   static const seatSelect = '/seat-select';
   static const confirmBooking = '/confirm-booking';
@@ -60,7 +50,7 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const LoginScreen());
 
       case adminHome:
-        return MaterialPageRoute(builder: (_) => const AdminDashboard());  
+        return MaterialPageRoute(builder: (_) => const AdminDashboard());
 
       case conductorHome:
         return MaterialPageRoute(builder: (_) => const ConductorShell());
@@ -71,7 +61,7 @@ class AppRoutes {
       case conductorActiveTrip:
         return MaterialPageRoute(builder: (_) => const ConductorActiveTripPage());
 
-      case conductorBookings: {
+      case conductorBookings:
         final args = settings.arguments;
         if (args is Map && args["tripId"] is int) {
           return MaterialPageRoute(
@@ -79,9 +69,8 @@ class AppRoutes {
           );
         }
         return _badRoute("ConductorBookings args missing");
-      }
 
-      case conductorBookingDetails: {
+      case conductorBookingDetails:
         final args = settings.arguments;
         if (args is Map && args["booking"] != null) {
           return MaterialPageRoute(
@@ -89,7 +78,6 @@ class AppRoutes {
           );
         }
         return _badRoute("ConductorBookingDetails args missing");
-      }
 
       case home:
         return MaterialPageRoute(builder: (_) => const HomePage());
@@ -122,7 +110,7 @@ class AppRoutes {
       case trackBus:
         return MaterialPageRoute(builder: (_) => const TrackBusPage());
 
-      // ✅ NEW FLOW ROUTES (must be BEFORE default)
+      // New flow routes (must be before default)
       case tripDetails:
         final args = settings.arguments;
         if (args is TripDetailsArgs) {
@@ -151,7 +139,7 @@ class AppRoutes {
         }
         return _badRoute("BookingSuccess args missing");
 
-      // ✅ default MUST be last
+      // Default must be last
       default:
         return _badRoute("Route not found: ${settings.name}");
     }

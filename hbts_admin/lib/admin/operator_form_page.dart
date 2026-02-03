@@ -178,7 +178,7 @@ class _OperatorFormPageState extends State<OperatorFormPage> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int>(
-                  value: _selectedCompanyId,
+                  initialValue: _selectedCompanyId,
                   items: _companies
                       .map(
                         (c) => DropdownMenuItem<int>(
