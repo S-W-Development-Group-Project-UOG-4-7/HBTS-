@@ -14,7 +14,24 @@ import {
   updateDriver,
   updateDriverStatus,
 } from "../controllers/adminDrivers.controller.js";
-import { listOperators } from "../controllers/adminOperators.controller.js";
+import {
+  addOperator,
+  deleteOperator,
+  listOperators,
+  updateOperator,
+} from "../controllers/adminOperators.controller.js";
+import {
+  addCompany,
+  deleteCompany,
+  listCompanies,
+  updateCompany,
+} from "../controllers/adminCompanies.controller.js";
+import {
+  addConductor,
+  deleteConductor,
+  listConductors,
+  updateConductor,
+} from "../controllers/adminConductors.controller.js";
 import {
   addBus,
   deleteBus,
@@ -102,6 +119,38 @@ router.put("/drivers/:id/status", updateDriverStatus);
 
 // GET operators
 router.get("/operators", listOperators);
+// ADD operator
+router.post("/operators", addOperator);
+// UPDATE operator
+router.put("/operators/:id", updateOperator);
+// DELETE operator
+router.delete("/operators/:id", deleteOperator);
+
+/* =========================
+   COMPANIES
+========================= */
+
+// GET companies
+router.get("/companies", listCompanies);
+// ADD company
+router.post("/companies", addCompany);
+// UPDATE company
+router.put("/companies/:id", updateCompany);
+// DELETE company
+router.delete("/companies/:id", deleteCompany);
+
+/* =========================
+   CONDUCTORS
+========================= */
+
+// GET conductors
+router.get("/conductors", listConductors);
+// ADD conductor
+router.post("/conductors", addConductor);
+// UPDATE conductor
+router.put("/conductors/:id", updateConductor);
+// DELETE conductor
+router.delete("/conductors/:id", deleteConductor);
 
 /* =========================
    BUSES CRUD
