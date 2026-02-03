@@ -256,7 +256,7 @@ class _NotificationTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Material(
-        color: n.isRead ? Colors.white : Colors.blue.shade50.withOpacity(0.55),
+        color: n.isRead ? Colors.white : Colors.blue.shade50.withAlpha((0.55 * 255).round()),
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
@@ -366,9 +366,9 @@ class _UnreadChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.20),
+        color: Colors.white.withAlpha((0.20 * 255).round()),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withOpacity(0.35)),
+        border: Border.all(color: Colors.white.withAlpha((0.35 * 255).round())),
       ),
       child: Text(
         "$count new",
@@ -503,3 +503,4 @@ class _DetailsSheet extends StatelessWidget {
     );
   }
 }
+

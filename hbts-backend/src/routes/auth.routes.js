@@ -6,6 +6,8 @@ import {
   passengerVerifyLoginOtp,
   adminLogin,
   adminVerifyLoginOtp,
+  login,
+  verifyLoginOtp
 } from "../controllers/auth.controller.js";
 import { requireTempToken } from "../middleware/tempAuth.middleware.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
@@ -13,6 +15,7 @@ import { getMe } from "../controllers/me.controller.js";
 <<<<<<< HEAD
 =======
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
 import {
@@ -24,6 +27,8 @@ import {
 >>>>>>> pasindu
 
 >>>>>>> 07412e1203042fbfa2a74db4f898a950bbd6509e
+=======
+>>>>>>> minanga
 const router = Router();
 
 // NEW unified login

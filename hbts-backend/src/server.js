@@ -1,15 +1,8 @@
-<<<<<<< HEAD
-import express from "express";
-import cors from "cors";
-import { loadEnv } from "./utils/env.js";
-import path from "path";
-import { fileURLToPath } from "url";
-
-=======
 // src/server.js
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
+import { pool } from "./db.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,23 +16,15 @@ import { WebSocketServer } from "ws";
 import express from "express";
 import cors from "cors";
 
->>>>>>> 07412e1203042fbfa2a74db4f898a950bbd6509e
 import authRoutes from "./routes/auth.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import tripRoutes from "./routes/trip.routes.js";
 import bookingRoutes from "./routes/booking.routes.js";
-import operatorRoutes from "./routes/operator.routes.js";
-import operatorBusesRoutes from "./routes/operator_buses.routes.js";
-import operatorDriversRoutes from "./routes/operator_drivers.routes.js";
-import operatorRoutesRoutes from "./routes/operator_routes.routes.js";
-import operatorTripsRoutes from "./routes/operator_trips.routes.js";
-import platformAllocationRoutes from "./routes/platform_allocation.routes.js";
-import ticketValidationRoutes from "./routes/ticket_validation.routes.js";
-import seatSelectionRoutes from "./routes/seat_selection.routes.js";
-import paymentRoutes from "./routes/payments.routes.js";
-import { startExpirePendingBookingsJob } from "./jobs/expirePendingBookings.job.js";
 import notificationRoutes from "./routes/notification.routes.js";
+import conductorRoutes from "./routes/conductor.routes.js";
+import routeRoutes from "./routes/route.routes.js";
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 loadEnv();
 
@@ -49,7 +34,15 @@ const uploadsDir = path.join(__dirname, "..", "uploads");
 
 app.use(cors());
 =======
+=======
+import { startExpirePendingBookingsJob } from "./jobs/expirePendingBookings.job.js";
+import reportRoutes from "./routes/report.routes.js";
+
+// ✅ WS handlers
+>>>>>>> minanga
 import { initNotificationWS } from "./ws/notification.ws.js";
+import { initRealtimeWS } from "./ws/realtime.ws.js";
+// OPTIONAL: only if you actually use /ws/tracking
 import { initTrackingWS } from "./ws/tracking.ws.js";
 
 const app = express();
@@ -77,6 +70,7 @@ app.use("/uploads", express.static(uploadsDir));
 >>>>>>> 07412e1203042fbfa2a74db4f898a950bbd6509e
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/admin/reports", reportRoutes);
 app.use("/api/trips", tripRoutes);
 app.use("/api/bookings", bookingRoutes);
 <<<<<<< HEAD
@@ -101,6 +95,8 @@ app.get("/health", (req, res) => res.json({ ok: true }));
 app.get("/", (req, res) => res.send("HBTS Backend is running 🚀"));
 =======
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/conductor", conductorRoutes);
+app.use("/api/routes", routeRoutes);
 
 app.get("/health", (req, res) => res.json({ ok: true }));
 app.get("/", (req, res) => res.send("HBTS Backend is running 🚀"));
@@ -111,22 +107,30 @@ const PORT = process.env.PORT || 4000;
 const server = http.createServer(app);
 
 // ✅ WS servers (manual upgrade routing - reliable for multiple WS paths)
-export const notificationWss = new WebSocketServer({ noServer: true });
-export const trackingWss = new WebSocketServer({ noServer: true });
+export const notificationsWss = new WebSocketServer({ noServer: true });
+export const realtimeWss = new WebSocketServer({ noServer: true });
+export const trackingWss = new WebSocketServer({ noServer: true }); // optional but safe to keep
 
 // ✅ Attach handlers
-initNotificationWS(notificationWss);
-initTrackingWS(trackingWss);
+initNotificationWS(notificationsWss);
+initRealtimeWS(realtimeWss);
+initTrackingWS(trackingWss); // if tracking.ws.js exists; otherwise remove this line + import
 
 // ✅ Route WS upgrades by path
 server.on("upgrade", (req, socket, head) => {
   try {
-    const url = new URL(req.url, "http://localhost");
-    const pathname = url.pathname;
+    const { pathname } = new URL(req.url, `http://${req.headers.host}`);
 
     if (pathname === "/ws/notifications") {
-      notificationWss.handleUpgrade(req, socket, head, (ws) => {
-        notificationWss.emit("connection", ws, req);
+      notificationsWss.handleUpgrade(req, socket, head, (ws) => {
+        notificationsWss.emit("connection", ws, req);
+      });
+      return;
+    }
+
+    if (pathname === "/ws/realtime") {
+      realtimeWss.handleUpgrade(req, socket, head, (ws) => {
+        realtimeWss.emit("connection", ws, req);
       });
       return;
     }

@@ -60,11 +60,7 @@ class NotificationStore extends ChangeNotifier {
 
       final parsed = <PassengerNotification>[];
       for (final e in raw) {
-        if (e is Map) {
-          parsed.add(
-            PassengerNotification.fromJson(Map<String, dynamic>.from(e)),
-          );
-        }
+        parsed.add(PassengerNotification.fromJson(e));
       }
 
       _items

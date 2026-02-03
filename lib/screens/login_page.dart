@@ -7,11 +7,6 @@ import 'otp_page.dart';
 import 'home_page.dart';
 import '../admin/dashboard.dart';
 
-// ✅ operator imports
-import '../operator/operator_start_page.dart';
-import '../operator/pages/services/operator_api.dart';
-import '../operator/pages/services/utils/operator_session.dart';
-
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -87,84 +82,24 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-<<<<<<< HEAD
-      final email = _emailController.text.trim();
-      final password = _passwordController.text;
-
-      // ✅ OPERATOR LOGIN (no OTP, token comes directly)
-      if (_loginAsOperator) {
-        final result = await OperatorApi.login(email: email, password: password);
-
-        final token = result["token"]?.toString();
-        final operator = (result["operator"] is Map)
-            ? Map<String, dynamic>.from(result["operator"] as Map)
-            : null;
-
-        if (token == null || operator == null) {
-          throw Exception("Invalid operator login response from server");
-        }
-
-        final operatorId = int.tryParse(operator["id"]?.toString() ?? "");
-        if (operatorId == null) {
-          throw Exception("Operator id missing/invalid in response");
-        }
-
-        // save session in memory (your existing code uses this)
-        OperatorSession.token = token;
-        OperatorSession.operatorId = operatorId;
-        OperatorSession.operatorName = operator["name"]?.toString();
-
-        // ✅ save to TokenStore so main.dart routing works
-        await TokenStore.saveToken(token);
-        await TokenStore.saveRole("operator");
-
-        if (!mounted) return;
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const OperatorStartPage()),
-        );
-        return;
-      }
-
-      // =======================
-      // PASSENGER / ADMIN LOGIN (OTP FLOW)
-      // =======================
-      final result = await AuthApi.login(
-        email: email,
-        password: password,
-=======
       final result = await AuthApi.unifiedLogin(
         identifier: _emailController.text.trim(), // email OR phone
         password: _passwordController.text,
->>>>>>> 07412e1203042fbfa2a74db4f898a950bbd6509e
       );
 
       final tempToken = result["tempToken"] as String?;
       final challengeIdRaw = result["challengeId"];
-<<<<<<< HEAD
-      final int challengeId = int.parse(challengeIdRaw.toString());
-      final role = result["role"]; // "admin" or passenger
-
-      if (tempToken == null || role == null) {
-=======
       final int? challengeId = int.tryParse(challengeIdRaw.toString());
 
       if (tempToken == null || challengeId == null) {
->>>>>>> 07412e1203042fbfa2a74db4f898a950bbd6509e
         throw Exception("Invalid response from server");
       }
 
       if (!mounted) return;
 
-<<<<<<< HEAD
-      final otpFlow =
-          role == "admin" ? OtpFlow.adminLogin2fa : OtpFlow.passengerLogin2fa;
-=======
       // Unified login uses a single OTP flow
       final otpFlow = OtpFlow.login2fa;
 
->>>>>>> 07412e1203042fbfa2a74db4f898a950bbd6509e
 
       Navigator.push(
         context,

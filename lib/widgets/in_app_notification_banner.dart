@@ -30,7 +30,6 @@ class InAppNotificationBanner {
     }
 
     final overlay = Overlay.of(context, rootOverlay: true);
-    if (overlay == null) return;
 
     late final OverlayEntry entry;
 

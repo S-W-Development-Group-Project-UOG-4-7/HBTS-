@@ -4,10 +4,10 @@ class DriverTripsPage extends StatefulWidget {
   const DriverTripsPage({super.key});
 
   @override
-  _DriverTripsPageState createState() => _DriverTripsPageState();
+  DriverTripsPageState createState() => DriverTripsPageState();
 }
 
-class _DriverTripsPageState extends State<DriverTripsPage> {
+class DriverTripsPageState extends State<DriverTripsPage> {
   String tripStatus = "Not Started";
 
   @override

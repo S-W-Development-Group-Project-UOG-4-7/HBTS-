@@ -5,9 +5,10 @@ import '../services/token_store.dart';
 import '../services/user_api.dart';
 import '../models/user_model.dart';
 import '../app_routes.dart';
-import 'notifications_page.dart';
 import '../state/notification_store.dart';
-import 'track_my_booking_list_page.dart';
+import '../api/booking_api.dart';
+import '../models/my_booking_item.dart';
+import 'booking_details_page.dart';
 
 
 class HomePage extends StatefulWidget {
@@ -22,6 +23,8 @@ class _HomePageState extends State<HomePage> {
   AppUser? _user;
 
   int _navIndex = 0;
+  UpcomingTripUiModel? _upcomingTrip;
+  MyBookingItem? _upcomingBooking;
 
   @override
   void initState() {
@@ -42,9 +45,59 @@ class _HomePageState extends State<HomePage> {
 
     try {
       final me = await UserApi.fetchLoggedInUser();
+      // Attempt to fetch bookings to compute nearest upcoming
+      List<MyBookingItem> myBookings = const [];
+      try {
+        myBookings = await BookingApi.getMyBookings();
+      } catch (_) {}
+
+      final now = DateTime.now();
+      final nowLocal = now;
+      debugPrint("upcoming count before filter = ${myBookings.length}");
+      for (final b in myBookings) {
+        debugPrint(
+          "HOME booking ${b.bookingId} tripStatus=${b.tripStatus} "
+          "depUtc=${b.departureTime} depLocal=${b.departureTime.toLocal()} now=$nowLocal",
+        );
+      }
+      final upcoming = myBookings
+          .where((b) {
+            final trip = b.tripStatus.toLowerCase().trim();
+            final st = b.status.toLowerCase().trim();
+            if (trip == 'cancelled' || st == 'cancelled' || trip == 'completed') return false;
+            return b.departureTime.toLocal().isAfter(now);
+          })
+          .toList()
+        ..sort((a, b) => a.departureTime.compareTo(b.departureTime));
+      debugPrint("upcoming count after filter = ${upcoming.length}");
+
+      UpcomingTripUiModel? up;
+      MyBookingItem? upBooking;
+      if (upcoming.isNotEmpty) {
+        final first = upcoming.first;
+        final dep = first.departureTime.toLocal();
+        final dateText = "${dep.day.toString().padLeft(2, '0')}/${dep.month.toString().padLeft(2, '0')}/${dep.year}";
+        final hh = ((dep.hour % 12 == 0) ? 12 : (dep.hour % 12));
+        final mm = dep.minute.toString().padLeft(2, '0');
+        final ampm = dep.hour >= 12 ? 'PM' : 'AM';
+        final timeText = "$hh:$mm $ampm";
+        up = UpcomingTripUiModel(
+          from: first.fromLocation,
+          to: first.toLocation,
+          dateText: dateText,
+          timeText: timeText,
+          seatText: "Seat: ${first.seatLabel}",
+          status: first.tripStatus,
+        );
+        upBooking = first;
+      }
+
       if (!mounted) return;
+      debugPrint("HOME upcomingTrip is ${up != null ? 'NOT NULL' : 'NULL'}");
       setState(() {
         _user = me;
+        _upcomingTrip = up;
+        _upcomingBooking = upBooking;
         _loading = false;
       });
     } catch (e) {
@@ -96,19 +149,21 @@ class _HomePageState extends State<HomePage> {
 
   // This should become your "Upcoming Schedules (today)" page later.
   // For now it can go to myBookings so you don't break anything.
-  void _goUpcomingSchedules() => Navigator.pushNamed(context, AppRoutes.myBookings);
+  void _goUpcomingSchedules() => Navigator.pushNamed(context, AppRoutes.upcomingToday);
 
-  void _goTrackBooking() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const TrackMyBookingListPage()),
-    );
-  }
+  void _goTrackBooking() => Navigator.pushNamed(context, AppRoutes.trackMyBooking);
   void _goTrackBus() => Navigator.pushNamed(context, AppRoutes.trackBus);
 
   // Nearest trip card → booking details
   // Wire args later using your existing logic/models.
-  void _goNearestTripDetails() => Navigator.pushNamed(context, AppRoutes.myBookings);
+  void _goNearestTripDetails() {
+    final b = _upcomingBooking;
+    if (b == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => BookingDetailsPage(item: b)),
+    );
+  }
 
   void _onBottomNavTap(int index) {
     setState(() => _navIndex = index);
@@ -185,8 +240,7 @@ class _HomePageState extends State<HomePage> {
     final user = _user!;
     final hasPhoto = user.profileImage != null && user.profileImage!.trim().isNotEmpty;
 
-    // Placeholder: later wire to real "nearest upcoming trip"
-    final UpcomingTripUiModel? upcomingTrip = null;
+    final UpcomingTripUiModel? upcomingTrip = _upcomingTrip;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7FAFF),
@@ -267,7 +321,6 @@ class _StylishTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
-    final blue = Colors.blue.shade700;
 
     return Container(
       padding: EdgeInsets.fromLTRB(16, topPadding + 10, 16, 14),
@@ -284,7 +337,7 @@ class _StylishTopBar extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.10),
+            color: Colors.black.withAlpha((0.10 * 255).round()),
             blurRadius: 18,
             offset: const Offset(0, 10),
           ),
@@ -297,9 +350,9 @@ class _StylishTopBar extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.18),
+              color: Colors.white.withAlpha((0.18 * 255).round()),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withOpacity(0.25)),
+              border: Border.all(color: Colors.white.withAlpha((0.25 * 255).round())),
             ),
             child: const Icon(Icons.directions_bus_rounded, color: Colors.white),
           ),
@@ -329,7 +382,7 @@ class _StylishTopBar extends StatelessWidget {
                 top: 10,
                 child: Selector<NotificationStore, int>(
                   selector: (_, store) => store.unreadCount,
-                  builder: (_, unreadCount, __) {
+                  builder: (context, unreadCount, child) {
                     if (unreadCount <= 0) return const SizedBox.shrink();
                     return Container(
                       width: 10,
@@ -350,7 +403,7 @@ class _StylishTopBar extends StatelessWidget {
             onTap: onProfile,
             child: CircleAvatar(
               radius: 18,
-              backgroundColor: Colors.white.withOpacity(0.22),
+              backgroundColor: Colors.white.withAlpha((0.22 * 255).round()),
               backgroundImage: hasPhoto ? NetworkImage(photoUrl!) : null,
               child: !hasPhoto
                   ? Text(
@@ -401,7 +454,7 @@ class _HomeBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final blue = Colors.blue.shade700;
+    debugPrint("HOME BODY upcomingTrip = ${upcomingTrip == null ? 'NULL' : 'HAS DATA'}");
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
@@ -413,7 +466,7 @@ class _HomeBody extends StatelessWidget {
             gradient: LinearGradient(
               colors: [
                 Colors.blue.shade50,
-                Colors.blue.shade100.withOpacity(0.55),
+                Colors.blue.shade100.withAlpha((0.55 * 255).round()),
               ],
             ),
             borderRadius: BorderRadius.circular(18),
@@ -441,9 +494,11 @@ class _HomeBody extends StatelessWidget {
         if (upcomingTrip != null) ...[
           _UpcomingTripCard(trip: upcomingTrip!, onTap: onUpcomingTripTap),
           const SizedBox(height: 14),
+        ] else ...[
+          _EmptyUpcomingCard(onTapReserve: onSearch),
+          const SizedBox(height: 14),
         ],
 
-        const SizedBox(height: 14),
 
         // 2) Search card
         Container(
@@ -563,7 +618,7 @@ class _CardShell extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withAlpha((0.06 * 255).round()),
             blurRadius: 18,
             offset: const Offset(0, 10),
           ),
@@ -604,39 +659,6 @@ class _InputLikeTile extends StatelessWidget {
   }
 }
 
-class _EmptyUpcomingCard extends StatelessWidget {
-  final VoidCallback onTapReserve;
-  const _EmptyUpcomingCard({required this.onTapReserve});
-
-  @override
-  Widget build(BuildContext context) {
-    return _CardShell(
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.blue.shade100),
-            ),
-            child: Icon(Icons.event_available_rounded, color: Colors.blue.shade700),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              "No upcoming trip yet.\nMake a reservation to get started.",
-              style: TextStyle(color: Colors.grey.shade800, fontWeight: FontWeight.w600),
-            ),
-          ),
-          TextButton(onPressed: onTapReserve, child: const Text("Reserve")),
-        ],
-      ),
-    );
-  }
-}
-
 class _UpcomingTripCard extends StatelessWidget {
   final UpcomingTripUiModel trip;
   final VoidCallback onTap;
@@ -657,7 +679,7 @@ class _UpcomingTripCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.10),
+              color: Colors.black.withAlpha((0.10 * 255).round()),
               blurRadius: 18,
               offset: const Offset(0, 10),
             ),
@@ -730,6 +752,64 @@ class _UpcomingTripCard extends StatelessWidget {
   }
 }
 
+class _EmptyUpcomingCard extends StatelessWidget {
+  final VoidCallback onTapReserve;
+
+  const _EmptyUpcomingCard({required this.onTapReserve});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.blue.shade100),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: Colors.blue.shade100,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.event_busy_rounded, color: Colors.blue.shade700),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "No upcoming trips yet",
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Reserve a seat to see it here.",
+                  style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          OutlinedButton(
+            onPressed: onTapReserve,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.blue.shade700,
+              side: BorderSide(color: Colors.blue.shade200),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text("Reserve"),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ActionTile extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -756,7 +836,7 @@ class _ActionTile extends StatelessWidget {
           border: Border.all(color: Colors.blue.shade100), // Blue border
           boxShadow: [
             BoxShadow(
-              color: Colors.blue.withOpacity(0.08), // Blue-tinted shadow
+              color: Colors.blue.withAlpha((0.08 * 255).round()), // Blue-tinted shadow
               blurRadius: 14,
               offset: const Offset(0, 8),
             ),
@@ -819,7 +899,7 @@ class _BigActionCard extends StatelessWidget {
           border: Border.all(color: Colors.grey.shade300), // Slightly darker border
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withAlpha((0.06 * 255).round()),
               blurRadius: 18,
               offset: const Offset(0, 10),
             ),
@@ -899,7 +979,7 @@ class _SpotlightBottomNav extends StatelessWidget {
                     border: Border.all(color: Colors.grey.shade200),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.10),
+                        color: Colors.black.withAlpha((0.10 * 255).round()),
                         blurRadius: 18,
                         offset: const Offset(0, 10),
                       ),
@@ -950,7 +1030,7 @@ class _SpotlightBottomNav extends StatelessWidget {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: blue.withOpacity(0.35),
+                          color: blue.withAlpha((0.35 * 255).round()),
                           blurRadius: 22,
                           offset: const Offset(0, 12),
                         ),
@@ -1018,3 +1098,4 @@ class _NavItem extends StatelessWidget {
     );
   }
 }
+

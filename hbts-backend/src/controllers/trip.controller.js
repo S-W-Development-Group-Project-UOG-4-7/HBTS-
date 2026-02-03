@@ -1,6 +1,7 @@
 // src/controllers/trip.controller.js
 import { pool } from "../db.js";
 import { expirePendingBookingsOnce } from "../jobs/expirePendingBookings.job.js";
+import { emitTripStarted, emitTripEnded, emitTripCancelled } from "../ws/realtime.ws.js";
 import { broadcastTripLocation } from "../ws/tracking.ws.js";
 
 
@@ -205,6 +206,19 @@ export async function pushTripLocation(req, res) {
 
     const loc = up.rows[0];
 
+    await pool.query(
+      `INSERT INTO trip_location_history (trip_id, lat, lng, speed, heading, recorded_at)
+       VALUES ($1,$2,$3,$4,$5,$6)`,
+      [
+        tripId,
+        latNum,
+        lonNum,
+        speedMps != null ? Number(speedMps) : null,
+        heading != null ? Number(heading) : null,
+        gpsAtTs,
+      ]
+    );
+
     await broadcastTripLocation(tripId, {
       trip_id: Number(loc.trip_id),
       lat: Number(loc.lat),
@@ -221,3 +235,203 @@ export async function pushTripLocation(req, res) {
     return res.status(500).json({ message: "Server error" });
   }
 }
+export async function startTrip(req, res) {
+  const tripId = Number(req.params.id);
+  if (!Number.isFinite(tripId)) {
+    return res.status(400).json({ message: "Invalid trip id" });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Lock the trip row so 2 starts can't race
+    const q = await client.query(
+      `
+      SELECT trip_id, operator_id, bus_id, status, deleted_at
+      FROM trips
+      WHERE trip_id = $1
+      FOR UPDATE
+      `,
+      [tripId]
+    );
+
+    if (!q.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Trip not found" });
+    }
+
+    const t = q.rows[0];
+
+    if (t.deleted_at) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ message: "Trip is deleted" });
+    }
+
+    // ✅ Adjust these values to match your trip_status enum
+    const alreadyActive = ["started", "ongoing"].includes(String(t.status));
+    if (alreadyActive) {
+      // idempotent success — still emit? Usually NO (avoid spam)
+      await client.query("COMMIT");
+      return res.json({
+        ok: true,
+        idempotent: true,
+        trip_id: t.trip_id,
+        status: t.status,
+      });
+    }
+
+    // Optional: only scheduled can start (depends on your rules)
+    if (String(t.status) !== "scheduled") {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ message: `Trip cannot be started from status ${t.status}` });
+    }
+
+    const upd = await client.query(
+      `
+      UPDATE trips
+      SET status = 'running'::trip_status,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE trip_id = $1
+      RETURNING trip_id, operator_id, bus_id, status
+      `,
+      [tripId]
+    );
+
+    const startedTrip = upd.rows[0];
+
+    await client.query("COMMIT");
+
+    // ✅ Emit AFTER commit so clients don’t see a trip that isn't committed yet
+    emitTripStarted({
+      operatorId: startedTrip.operator_id,
+      busId: startedTrip.bus_id,
+      tripId: startedTrip.trip_id,
+    });
+
+    return res.json({ ok: true, idempotent: false, trip: startedTrip });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("startTrip error:", err);
+    return res.status(500).json({ message: "Server error" });
+  } finally {
+    client.release();
+  }
+}
+
+export async function endTrip(req, res) {
+  const tripId = Number(req.params.id);
+  if (!Number.isFinite(tripId)) return res.status(400).json({ message: "Invalid trip id" });
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const q = await client.query(
+      `SELECT trip_id, operator_id, bus_id, status, deleted_at FROM trips WHERE trip_id=$1 FOR UPDATE`,
+      [tripId]
+    );
+    if (!q.rows.length) { await client.query("ROLLBACK"); return res.status(404).json({ message: "Trip not found" }); }
+
+    const t = q.rows[0];
+    if (t.deleted_at) { await client.query("ROLLBACK"); return res.status(400).json({ message: "Trip is deleted" }); }
+
+    // idempotent
+    if (String(t.status) === "completed") {
+      await client.query("COMMIT");
+      return res.json({ ok: true, idempotent: true, trip_id: t.trip_id, status: t.status });
+    }
+
+    const upd = await client.query(
+      `
+      UPDATE trips
+      SET status = 'completed'::trip_status,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE trip_id = $1
+      RETURNING trip_id, operator_id, bus_id, status
+      `,
+      [tripId]
+    );
+
+    const ended = upd.rows[0];
+    await client.query("COMMIT");
+
+    emitTripEnded({ operatorId: ended.operator_id, busId: ended.bus_id, tripId: ended.trip_id });
+
+    return res.json({ ok: true, idempotent: false, trip: ended });
+  } catch (e) {
+    await client.query("ROLLBACK");
+    console.error("endTrip error:", e);
+    return res.status(500).json({ message: "Server error" });
+  } finally {
+    client.release();
+  }
+}
+
+export async function cancelTrip(req, res) {
+  const tripId = Number(req.params.id);
+  if (!Number.isFinite(tripId)) {
+    return res.status(400).json({ message: "Invalid trip id" });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const q = await client.query(
+      `SELECT trip_id, operator_id, bus_id, status, deleted_at
+       FROM trips
+       WHERE trip_id = $1
+       FOR UPDATE`,
+      [tripId]
+    );
+
+    if (!q.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Trip not found" });
+    }
+
+    const t = q.rows[0];
+
+    if (t.deleted_at) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ message: "Trip is deleted" });
+    }
+
+    // ✅ idempotent
+    if (String(t.status) === "cancelled") {
+      await client.query("COMMIT");
+      return res.json({ ok: true, idempotent: true, trip_id: t.trip_id, status: t.status });
+    }
+
+    const upd = await client.query(
+      `
+      UPDATE trips
+      SET status = 'cancelled'::trip_status,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE trip_id = $1
+      RETURNING trip_id, operator_id, bus_id, status
+      `,
+      [tripId]
+    );
+
+    const cancelled = upd.rows[0];
+    await client.query("COMMIT");
+
+    emitTripCancelled({
+      operatorId: cancelled.operator_id,
+      busId: cancelled.bus_id,
+      tripId: cancelled.trip_id,
+    });
+
+    return res.json({ ok: true, idempotent: false, trip: cancelled });
+  } catch (e) {
+    await client.query("ROLLBACK");
+    console.error("cancelTrip error:", e);
+    return res.status(500).json({ message: "Server error" });
+  } finally {
+    client.release();
+  }
+}
+
+

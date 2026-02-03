@@ -12,13 +12,20 @@ import 'operator/operator_start_page.dart';
 =======
 import 'screens/notifications_page.dart';
 
+<<<<<<< HEAD
 >>>>>>> 07412e1203042fbfa2a74db4f898a950bbd6509e
 
+=======
+import 'conductor/conductor_shell.dart';
+import 'conductor/scan_qr_page.dart';
+import 'conductor/conductor_active_trip_page.dart';
+import 'conductor/conductor_bookings_page.dart';
+import 'conductor/conductor_booking_details_page.dart';
+>>>>>>> minanga
 import 'screens/trip_details_page.dart';
 import 'screens/seat_selection_page.dart';
 import 'screens/confirm_booking_page.dart';
 import 'screens/booking_success_page.dart';
-
 import 'admin/dashboard.dart';
 
 
@@ -32,6 +39,12 @@ class AppRoutes {
   static const trackMyBooking = '/track-my-booking';
   static const trackBus = '/track-bus';
   static const notifications = '/notifications';
+  static const conductorHome = '/conductor';
+  static const conductorScan = '/conductor/scan';
+  static const conductorActiveTrip = '/conductor/active-trip';
+  static const conductorBookings = '/conductor/bookings';
+  static const conductorBookingDetails = '/conductor/booking-details';
+  static const upcomingToday = '/upcoming-today';
 
 
   static const tripDetails = '/trip-details';
@@ -48,6 +61,35 @@ class AppRoutes {
 
       case adminHome:
         return MaterialPageRoute(builder: (_) => const AdminDashboard());  
+
+      case conductorHome:
+        return MaterialPageRoute(builder: (_) => const ConductorShell());
+
+      case conductorScan:
+        return MaterialPageRoute(builder: (_) => const ConductorScanPage());
+
+      case conductorActiveTrip:
+        return MaterialPageRoute(builder: (_) => const ConductorActiveTripPage());
+
+      case conductorBookings: {
+        final args = settings.arguments;
+        if (args is Map && args["tripId"] is int) {
+          return MaterialPageRoute(
+            builder: (_) => ConductorBookingsPage(tripId: args["tripId"] as int),
+          );
+        }
+        return _badRoute("ConductorBookings args missing");
+      }
+
+      case conductorBookingDetails: {
+        final args = settings.arguments;
+        if (args is Map && args["booking"] != null) {
+          return MaterialPageRoute(
+            builder: (_) => ConductorBookingDetailsPage(booking: args["booking"]),
+          );
+        }
+        return _badRoute("ConductorBookingDetails args missing");
+      }
 
       case home:
         return MaterialPageRoute(builder: (_) => const HomePage());
@@ -66,6 +108,9 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const SchedulePage());
 
       case myBookings:
+        return MaterialPageRoute(builder: (_) => const PassengerBookingsPage());
+
+      case upcomingToday:
         return MaterialPageRoute(builder: (_) => const PassengerBookingsPage());
 
       case notifications:

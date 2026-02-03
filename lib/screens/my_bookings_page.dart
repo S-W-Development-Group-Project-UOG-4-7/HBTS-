@@ -10,12 +10,25 @@ class MyBookingsPage extends StatelessWidget {
 enum BookingStatusUI { scheduled, cancelled, onboard, completed }
 
 BookingStatusUI mapUiStatus(MyBookingItem b) {
-  final trip = b.tripStatus.toLowerCase();
-  final st = b.status.toLowerCase();
+  final trip = b.tripStatus.toLowerCase().trim();
+  final st = b.status.toLowerCase().trim();
 
-  if (trip == "cancelled" || st == "cancelled") return BookingStatusUI.cancelled;
-  if (trip == "completed") return BookingStatusUI.completed;
-  if (trip == "running" || trip == "started") return BookingStatusUI.onboard;
+  if (trip == "cancelled" || st == "cancelled") {
+    return BookingStatusUI.cancelled;
+  }
+
+  if (trip == "completed") {
+    return BookingStatusUI.completed;
+  }
+
+  // If passenger-side stale → show as completed
+  if ((trip == "running" || trip == "started")) {
+    final staleAt = b.arrivalTime.add(const Duration(hours: 24));
+    if (DateTime.now().isAfter(staleAt)) {
+      return BookingStatusUI.completed;
+    }
+    return BookingStatusUI.onboard;
+  }
 
   return BookingStatusUI.scheduled;
 }
@@ -116,9 +129,10 @@ class _BookingsList extends StatelessWidget {
                 Center(child: Text("No bookings found")),
               ],
             )
-          : ListView.builder(
+          : ListView.separated(
               padding: const EdgeInsets.all(12),
               itemCount: items.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 2),
               itemBuilder: (_, i) {
                 final b = items[i];
                 return _BookingCard(
@@ -148,38 +162,73 @@ class _BookingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final uiStatus = mapUiStatus(item);
 
-    final dt = item.departureTime;
+    final dt = item.departureTime.toLocal();
     final dateTimeText =
         "${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} · ${_time(dt)}";
 
-    return Card(
-      elevation: 3,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(item.routeText,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    Text(dateTimeText, style: TextStyle(color: Colors.grey.shade700)),
-                    const SizedBox(height: 6),
-                    Text("Seat: ${item.seatLabel}",
-                        style: const TextStyle(fontWeight: FontWeight.w800)),
-                  ],
-                ),
+    final theme = Theme.of(context);
+    final bg = theme.colorScheme.surfaceContainerHighest;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.35)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // leading icon
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: theme.dividerColor.withValues(alpha: 0.35)),
               ),
-              _StatusBadge(status: uiStatus),
-            ],
-          ),
+              child: const Icon(Icons.directions_bus_rounded),
+            ),
+            const SizedBox(width: 12),
+
+            // main content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.routeText,
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(Icons.schedule, size: 16, color: theme.hintColor),
+                      const SizedBox(width: 6),
+                      Text(dateTimeText, style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor)),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _MiniPill(text: "Seat: ${item.seatLabel}"),
+                      // You can add more pills later: price, boarding stop, etc.
+                    ],
+                  )
+                ],
+              ),
+            ),
+
+            const SizedBox(width: 10),
+            _StatusBadge(status: uiStatus),
+          ],
         ),
       ),
     );
@@ -191,6 +240,25 @@ class _BookingCard extends StatelessWidget {
     final mm = dt.minute.toString().padLeft(2, '0');
     final ampm = h >= 12 ? "PM" : "AM";
     return "$hh:$mm $ampm";
+  }
+}
+
+class _MiniPill extends StatelessWidget {
+  final String text;
+  const _MiniPill({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.35)),
+      ),
+      child: Text(text, style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700)),
+    );
   }
 }
 
@@ -217,10 +285,11 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withAlpha((0.15 * 255).round()),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(text, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
     );
   }
 }
+

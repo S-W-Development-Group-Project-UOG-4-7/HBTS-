@@ -14,5 +14,5 @@ This project is a Flutter application.
 
 ## Admin Credentials (for testing)
 
-Admin email: sashhhhaaaa777@gmail.com  
+Admin email: sashhhhaaaa777@gmail.com
 Password: sashhhhaaaa

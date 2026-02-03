@@ -23,7 +23,7 @@ class DriverDashboard extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => DriverTripsPage(),
+                    builder: (context) => const DriverTripsPage(),
                   ),
                 );
               },

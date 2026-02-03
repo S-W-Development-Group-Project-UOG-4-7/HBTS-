@@ -33,14 +33,16 @@ class _BookingDetailsPageState extends State<BookingDetailsPage> {
     setState(() => _loadingSeats = true);
     try {
       final data = await SeatApi.getTripSeats(widget.item.tripId);
+      if (!mounted) return;
       setState(() => _seats = data);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("Seat load failed: $e")));
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Seat load failed: $e")));
     } finally {
-      if (mounted) setState(() => _loadingSeats = false);
+      if (mounted) {
+        setState(() => _loadingSeats = false);
+      }
     }
   }
 
@@ -126,6 +128,7 @@ class _BookingDetailsPageState extends State<BookingDetailsPage> {
 
                   try {
                     await BookingApi.changeSeat(bookingId: b.bookingId, seatId: newSeatId);
+                    if (!context.mounted) return;
 
                     final newSeat = _seats.firstWhere((s) => s.seatId == newSeatId);
                     setState(() {
@@ -133,18 +136,15 @@ class _BookingDetailsPageState extends State<BookingDetailsPage> {
                       _seatLabel = newSeat.seatLabel;
                     });
 
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Seat updated")),
-                      );
-                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Seat updated")),
+                    );
                     await _loadSeats();
                   } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Seat update failed: $e")),
-                      );
-                    }
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Seat update failed: $e")),
+                    );
                   }
                 },
               ),
@@ -173,18 +173,16 @@ class _BookingDetailsPageState extends State<BookingDetailsPage> {
 
                   try {
                     await BookingApi.cancelBooking(bookingId: b.bookingId);
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Booking cancelled")),
-                      );
-                      Navigator.pop(context);
-                    }
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Booking cancelled")),
+                    );
+                    Navigator.pop(context);
                   } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Cancel failed: $e")),
-                      );
-                    }
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Cancel failed: $e")),
+                    );
                   }
                 },
               ),
@@ -204,7 +202,9 @@ class SeatMapFromSeats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (seats.isEmpty) return const Text("No seats.");
+    if (seats.isEmpty) {
+      return const Text("No seats.");
+    }
 
     final maxRow = seats.map((s) => s.seatRow).reduce((a, b) => a > b ? a : b);
     final maxCol = seats.map((s) => s.seatCol).reduce((a, b) => a > b ? a : b);
@@ -234,15 +234,21 @@ class SeatMapFromSeats extends StatelessWidget {
         final c = (index % cols) + 1;
 
         final seat = seatByPos["$r:$c"];
-        if (seat == null || seat.seatType == "aisle") return const SizedBox.shrink();
+        if (seat == null || seat.seatType == "aisle") {
+          return const SizedBox.shrink();
+        }
 
         final isMine = seat.seatId == mySeatId;
         final booked = seat.isBooked;
 
         Color bg;
-        if (isMine) bg = Colors.blue.shade700;
-        else if (booked) bg = Colors.red.shade300;
-        else bg = Colors.grey.shade200;
+        if (isMine) {
+          bg = Colors.blue.shade700;
+        } else if (booked) {
+          bg = Colors.red.shade300;
+        } else {
+          bg = Colors.grey.shade200;
+        }
 
         return Container(
           decoration: BoxDecoration(
@@ -264,3 +270,4 @@ class SeatMapFromSeats extends StatelessWidget {
     );
   }
 }
+

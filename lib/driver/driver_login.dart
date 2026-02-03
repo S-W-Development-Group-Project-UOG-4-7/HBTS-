@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'driver_dashboard.dart';
 
 class DriverLoginPage extends StatelessWidget {
+  DriverLoginPage({super.key});
+
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
@@ -38,7 +40,7 @@ class DriverLoginPage extends StatelessWidget {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => DriverDashboard(),
+                    builder: (context) => const DriverDashboard(),
                   ),
                 );
               },

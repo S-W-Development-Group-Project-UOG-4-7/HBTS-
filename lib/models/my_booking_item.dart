@@ -54,7 +54,17 @@ class MyBookingItem {
   String get routeText => routeName.isNotEmpty ? routeName : "$fromLocation → $toLocation";
 
   bool get isHistory {
-    final t = tripStatus.toLowerCase();
-    return t == "cancelled" || t == "completed";
+    final t = tripStatus.toLowerCase().trim();
+    final now = DateTime.now();
+
+    // Always history if backend says so
+    if (t == "cancelled" || t == "completed") return true;
+
+    // scheduled/running/started => move to history 24h after arrival time
+    if (now.isAfter(arrivalTime.add(const Duration(hours: 24)))) {
+      return true;
+    }
+
+    return false;
   }
 }
