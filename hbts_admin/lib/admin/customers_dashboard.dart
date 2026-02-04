@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../services/admin_api.dart';
+import '../services/admin_api.dart';
 import 'customer_details_page.dart';
 import '../theme/app_theme.dart';
 

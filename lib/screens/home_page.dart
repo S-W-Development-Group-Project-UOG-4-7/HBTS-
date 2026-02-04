@@ -149,7 +149,10 @@ class _HomePageState extends State<HomePage> {
 
   // This should become your "Upcoming Schedules (today)" page later.
   // For now it can go to myBookings so you don't break anything.
-  void _goUpcomingSchedules() => Navigator.pushNamed(context, AppRoutes.upcomingToday);
+  void _goUpcomingSchedules() {
+    final route = AppRoutes.upcomingToday ?? AppRoutes.myBookings;
+    Navigator.pushNamed(context, route);
+  }
 
   void _goTrackBooking() => Navigator.pushNamed(context, AppRoutes.trackMyBooking);
   void _goTrackBus() => Navigator.pushNamed(context, AppRoutes.trackBus);

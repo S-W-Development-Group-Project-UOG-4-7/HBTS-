@@ -129,7 +129,11 @@ class _ConductorBookingsPageState extends State<ConductorBookingsPage> {
             style: const TextStyle(fontWeight: FontWeight.w900)),
         subtitle: Text("${b.boardingStopName} → ${b.droppingStopName}"),
         trailing: const Icon(Icons.chevron_right_rounded),
-        onTap: () => Navigator.pushNamed(context, AppRoutes.conductorBookingDetails, arguments: {"booking": b}),
+        onTap: () => Navigator.pushNamed(
+          context,
+          AppRoutes.conductorBookingDetails ?? '',
+          arguments: {"booking": b},
+        ),
       ),
     );
   }

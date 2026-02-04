@@ -51,7 +51,9 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
 
       // Get current position
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
 
       setState(() {
@@ -146,7 +148,7 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${widget.trip.fromLocation} → ${widget.trip.toLocation}',
+                      '${widget.trip.fromLocation} -> ${widget.trip.toLocation}',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -154,7 +156,7 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Trip #${widget.trip.tripId} • Bus #${widget.trip.busId ?? "N/A"}',
+                      'Trip #${widget.trip.tripId} - Bus #${widget.trip.busId ?? "N/A"}',
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.grey[600],
@@ -216,7 +218,7 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
                       _buildLocationRow(
                         Icons.explore,
                         'Heading',
-                        '${currentPosition!.heading.toStringAsFixed(0)}°',
+                        '${currentPosition!.heading.toStringAsFixed(0)} deg',
                       ),
                       const SizedBox(height: 12),
                       _buildLocationRow(
@@ -228,7 +230,7 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
                       _buildLocationRow(
                         Icons.track_changes,
                         'Accuracy',
-                        '±${currentPosition!.accuracy.toStringAsFixed(1)} m',
+                        '+/-${currentPosition!.accuracy.toStringAsFixed(1)} m',
                       ),
                     ] else ...[
                       Center(

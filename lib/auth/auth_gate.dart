@@ -38,7 +38,7 @@ class _AuthGateState extends State<AuthGate> {
   if (role == "conductor") {
     Navigator.pushNamedAndRemoveUntil(
       context,
-      AppRoutes.conductorHome,
+      AppRoutes.conductorHome!,
       (_) => false,
     );
     return;

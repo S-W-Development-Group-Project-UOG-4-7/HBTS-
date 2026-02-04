@@ -97,7 +97,7 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage> {
                             minimumSize: const Size.fromHeight(52),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           ),
-                          onPressed: () => Navigator.pushNamed(context, AppRoutes.conductorScan),
+                          onPressed: () => Navigator.pushNamed(context, AppRoutes.conductorScan ?? '/'),
                           icon: const Icon(Icons.qr_code_scanner_rounded),
                           label: const Text("Scan QR", style: TextStyle(fontWeight: FontWeight.w900)),
                         ),
@@ -182,7 +182,7 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage> {
     return _card(
       padding: 14,
       child: InkWell(
-        onTap: () => Navigator.pushNamed(context, AppRoutes.conductorBookingDetails, arguments: {"booking": b}),
+        onTap: () => Navigator.pushNamed(context, AppRoutes.conductorBookingDetails ?? '/', arguments: {"booking": b}),
         child: Row(
           children: [
             Container(

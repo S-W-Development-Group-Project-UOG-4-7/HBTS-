@@ -239,7 +239,7 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage>
 
               Navigator.pushNamed(
                 context,
-                AppRoutes.conductorBookings,
+                AppRoutes.conductorBookings!,
                 arguments: {"tripId": tripId},
               );
             },
@@ -662,7 +662,7 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage>
                 Navigator.pop(context); // close dialog
                 // ✅ manual exit only
                 Navigator.popUntil(context, (r) => r.isFirst);
-                Navigator.pushReplacementNamed(context, AppRoutes.conductorHome);
+                Navigator.pushReplacementNamed(context, AppRoutes.conductorHome!);
               },
               child: const Text("Close Trip", style: TextStyle(fontWeight: FontWeight.w900)),
             ),

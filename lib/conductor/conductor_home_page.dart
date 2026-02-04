@@ -199,7 +199,7 @@ class _ConductorHomePageState extends State<ConductorHomePage> {
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
-              onPressed: () => Navigator.pushNamed(context, AppRoutes.conductorActiveTrip),
+              onPressed: () => Navigator.pushNamed(context, AppRoutes.conductorActiveTrip!),
               child: const Text("View Active Trip", style: TextStyle(fontWeight: FontWeight.w900)),
             ),
           ),
@@ -259,7 +259,7 @@ class _ConductorHomePageState extends State<ConductorHomePage> {
               ),
               onPressed: () {
                 if (isRunning) {
-                  Navigator.pushNamed(context, AppRoutes.conductorActiveTrip);
+                  Navigator.pushNamed(context, AppRoutes.conductorActiveTrip!);
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text("Trip is ${_statusLabel(status)} (details later)")),
