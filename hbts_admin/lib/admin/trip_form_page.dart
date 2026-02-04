@@ -549,55 +549,58 @@ class _TripFormPageState extends State<TripFormPage> {
                       ),
                       const SizedBox(height: 18),
                       if (!isEdit)
-                        ElevatedButton.icon(
-                          onPressed: _addRecord,
-                          icon: const Icon(Icons.add_circle_outline),
-                          label: const Text("Add Record"),
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size(0, 36),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: SizedBox(
+                            height: 36,
+                            child: ElevatedButton.icon(
+                              onPressed: _addRecord,
+                              icon: const Icon(Icons.add_circle_outline, size: 18),
+                              label: const Text("Add Record"),
+                              style: ElevatedButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                              ),
                             ),
                           ),
                         ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: isEdit ? _updateRecord : null,
-                              icon: const Icon(Icons.save_outlined),
-                              label: const Text("Update"),
-                              style: OutlinedButton.styleFrom(
-                                minimumSize: const Size(0, 36),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 10,
+                      if (isEdit) ...[
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              height: 36,
+                              child: ElevatedButton.icon(
+                                onPressed: _updateRecord,
+                                icon: const Icon(Icons.save_outlined, size: 18),
+                                label: const Text("Update"),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: isEdit ? _deleteRecord : null,
-                              icon: const Icon(Icons.delete_outline),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.danger,
-                                side:
-                                    const BorderSide(color: AppColors.danger),
-                                minimumSize: const Size(0, 36),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 10,
+                            const SizedBox(width: 10),
+                            SizedBox(
+                              height: 36,
+                              child: ElevatedButton.icon(
+                                onPressed: _deleteRecord,
+                                icon: const Icon(Icons.delete_outline, size: 18),
+                                label: const Text("Delete"),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.danger,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
                                 ),
                               ),
-                              label: const Text("Delete"),
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
+                      ],
                       if (_saving)
                         const Padding(
                           padding: EdgeInsets.only(top: 16),

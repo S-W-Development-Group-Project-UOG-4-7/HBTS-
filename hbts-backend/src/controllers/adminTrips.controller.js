@@ -101,6 +101,7 @@ export const listTrips = async (req, res) => {
       "name",
       "full_name",
       "driver_name",
+      "drivername",
       "fullName",
       "driverName",
     ]);
@@ -182,6 +183,7 @@ export const listDeletedTrips = async (req, res) => {
       "name",
       "full_name",
       "driver_name",
+      "drivername",
       "fullName",
       "driverName",
     ]);
@@ -604,6 +606,56 @@ export const listTripLocationHistory = async (req, res) => {
   }
 };
 
+export const listStops = async (req, res) => {
+  try {
+    const columns = await getColumns("stops");
+    if (!columns.length) {
+      return res.status(500).json({ message: "Stops table not found" });
+    }
+
+    const idCol = pickColumn(columns, ["stop_id", "id", "stopId", "stopid"]);
+    if (!idCol) {
+      return res.status(500).json({ message: "Stop id column not found" });
+    }
+
+    const nameCol = pickColumn(columns, ["stop_name", "name", "title"]);
+    const codeCol = pickColumn(columns, ["stop_code", "code"]);
+    const cityCol = pickColumn(columns, ["city", "town"]);
+    const isActiveCol = pickColumn(columns, ["is_active", "active"]);
+
+    const selectParts = [
+      `s."${idCol}" AS stop_id`,
+      nameCol ? `s."${nameCol}" AS stop_name` : "NULL AS stop_name",
+      codeCol ? `s."${codeCol}" AS stop_code` : "NULL AS stop_code",
+      cityCol ? `s."${cityCol}" AS city` : "NULL AS city",
+    ];
+
+    const where = [];
+    if (columns.includes("deleted_at")) {
+      where.push("s.deleted_at IS NULL");
+    }
+    if (isActiveCol) {
+      where.push(`COALESCE(s."${isActiveCol}", true) = true`);
+    }
+
+    const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+    const result = await pool.query(
+      `
+      SELECT ${selectParts.join(", ")}
+      FROM stops s
+      ${whereSql}
+      ORDER BY s."${idCol}" ASC
+      `
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error("List stops error:", err);
+    res.status(500).json({ message: "Failed to load stops" });
+  }
+};
+
 export const listAssignableDrivers = async (req, res) => {
   try {
     const columns = await getColumns("drivers");
@@ -616,6 +668,7 @@ export const listAssignableDrivers = async (req, res) => {
       "name",
       "full_name",
       "driver_name",
+      "drivername",
       "fullName",
       "driverName",
     ]);

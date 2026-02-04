@@ -53,6 +53,7 @@ import {
   addTrip,
   deleteTrip,
   listDeletedTrips,
+  listStops,
   listAssignableDrivers,
   listTripLocationHistory,
   listTrips,
@@ -60,6 +61,7 @@ import {
   restoreTrip,
   updateTrip,
 } from "../controllers/adminTrips.controller.js";
+import { addAdminUser } from "../controllers/adminUsers.controller.js";
 
 const router = express.Router();
 
@@ -153,6 +155,13 @@ router.put("/conductors/:id", updateConductor);
 router.delete("/conductors/:id", deleteConductor);
 
 /* =========================
+   ADMIN USERS
+========================= */
+
+// ADD admin-created user (admin role)
+router.post("/users", addAdminUser);
+
+/* =========================
    BUSES CRUD
 ========================= */
 
@@ -209,6 +218,9 @@ router.get("/trips", listTrips);
 router.get("/trips/deleted", listDeletedTrips);
 // GET trip history (deleted)
 router.get("/trips/history", listDeletedTrips);
+
+// GET stops (lookup)
+router.get("/stops", listStops);
 
 // GET assignable drivers (for trip form)
 router.get("/trips/assignable-drivers", listAssignableDrivers);

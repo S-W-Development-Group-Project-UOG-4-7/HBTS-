@@ -203,15 +203,8 @@ export const addConductor = async (req, res) => {
         return res.status(400).json({ message: "Invalid bus_id" });
       }
       const busOperatorId = busCheck.rows[0].operator_id;
-      if (operatorId == null) {
-        operatorId = busOperatorId;
-      } else if (Number(operatorId) !== Number(busOperatorId)) {
-        await client.query("ROLLBACK");
-        return res.status(400).json({
-          message:
-            "Conductor operator_id must match bus.operator_id for the selected bus",
-        });
-      }
+      // Always align operator_id to the selected bus operator_id.
+      operatorId = busOperatorId;
     }
 
     if (userCols.includes("email")) {
@@ -413,15 +406,8 @@ export const updateConductor = async (req, res) => {
         return res.status(400).json({ message: "Invalid bus_id" });
       }
       const busOperatorId = busCheck.rows[0].operator_id;
-      if (operatorId == null) {
-        operatorId = busOperatorId;
-      } else if (Number(operatorId) !== Number(busOperatorId)) {
-        await client.query("ROLLBACK");
-        return res.status(400).json({
-          message:
-            "Conductor operator_id must match bus.operator_id for the selected bus",
-        });
-      }
+      // Always align operator_id to the selected bus operator_id.
+      operatorId = busOperatorId;
     }
 
     const uIdCol = pickColumn(userCols, ["user_id", "id"]);

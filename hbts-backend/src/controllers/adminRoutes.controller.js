@@ -85,7 +85,13 @@ const normalizeRouteInput = (body) => {
       body.distanceKm ??
       body.distance_km ??
       null,
-    fare: body.fare ?? body.price ?? null,
+    fare:
+      body.fare ??
+      body.price ??
+      body.fare_amount ??
+      body.route_fare ??
+      body.route_price ??
+      null,
     status: normalizedStatus,
     description: body.description ?? body.notes ?? null,
   };
@@ -289,16 +295,35 @@ export const addRoute = async (req, res) => {
       data.destination
     );
     addParam(pickColumn(columns, ["distance", "distance_km"]), data.distance);
-    addParam(pickColumn(columns, ["fare", "price"]), data.fare);
+    addParam(
+      pickColumn(columns, [
+        "fare",
+        "price",
+        "fare_amount",
+        "route_fare",
+        "route_price",
+      ]),
+      data.fare
+    );
     addParam(pickColumn(columns, ["status", "route_status"]), data.status);
     addParam(pickColumn(columns, ["description", "notes"]), data.description);
 
-    if (columns.includes("created_at")) {
-      cols.push('"created_at"');
+    const createdAtCol = pickColumn(columns, [
+      "created_at",
+      "createdAt",
+      "createdat",
+    ]);
+    if (createdAtCol) {
+      cols.push(`"${createdAtCol}"`);
       placeholders.push("now()");
     }
-    if (columns.includes("updated_at")) {
-      cols.push('"updated_at"');
+    const updatedAtCol = pickColumn(columns, [
+      "updated_at",
+      "updatedAt",
+      "updatedat",
+    ]);
+    if (updatedAtCol) {
+      cols.push(`"${updatedAtCol}"`);
       placeholders.push("now()");
     }
 
@@ -365,7 +390,16 @@ export const updateRoute = async (req, res) => {
       data.destination
     );
     addUpdate(pickColumn(columns, ["distance", "distance_km"]), data.distance);
-    addUpdate(pickColumn(columns, ["fare", "price"]), data.fare);
+    addUpdate(
+      pickColumn(columns, [
+        "fare",
+        "price",
+        "fare_amount",
+        "route_fare",
+        "route_price",
+      ]),
+      data.fare
+    );
     addUpdate(pickColumn(columns, ["status", "route_status"]), data.status);
     addUpdate(pickColumn(columns, ["description", "notes"]), data.description);
 
@@ -373,8 +407,13 @@ export const updateRoute = async (req, res) => {
       return res.status(400).json({ message: "No fields to update" });
     }
 
-    if (columns.includes("updated_at")) {
-      updates.push("updated_at = now()");
+    const updatedAtCol = pickColumn(columns, [
+      "updated_at",
+      "updatedAt",
+      "updatedat",
+    ]);
+    if (updatedAtCol) {
+      updates.push(`"${updatedAtCol}" = now()`);
     }
 
     const idCol = getIdColumn(columns) ?? "route_id";

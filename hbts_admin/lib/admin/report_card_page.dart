@@ -275,33 +275,47 @@ class _ReportCardPageState extends State<ReportCardPage> {
                     Row(
                       children: [
                         Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: _loading ? null : _load,
-                            icon: const Icon(Icons.analytics_outlined),
-                            label: const Text("Generate Report"),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: _exporting ? null : _exportPdf,
-                            icon: const Icon(Icons.picture_as_pdf),
-                            label: const Text("Export PDF"),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.danger,
-                              side: const BorderSide(color: AppColors.danger),
+                          child: SizedBox(
+                            height: 32,
+                            child: ElevatedButton.icon(
+                              onPressed: _loading ? null : _load,
+                              icon: const Icon(Icons.analytics_outlined, size: 18),
+                              label: const Text("Generate Report"),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                              ),
                             ),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: _exporting ? null : _exportExcel,
-                            icon: const Icon(Icons.grid_on),
-                            label: const Text("Export Excel"),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.success,
-                              side: const BorderSide(color: AppColors.success),
+                          child: SizedBox(
+                            height: 32,
+                            child: ElevatedButton.icon(
+                              onPressed: _exporting ? null : _exportPdf,
+                              icon: const Icon(Icons.picture_as_pdf, size: 18),
+                              label: const Text("Export PDF"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.danger,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: SizedBox(
+                            height: 32,
+                            child: ElevatedButton.icon(
+                              onPressed: _exporting ? null : _exportExcel,
+                              icon: const Icon(Icons.grid_on, size: 18),
+                              label: const Text("Export Excel"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.success,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                              ),
                             ),
                           ),
                         ),

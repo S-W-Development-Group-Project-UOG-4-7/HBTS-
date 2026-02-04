@@ -571,7 +571,12 @@ class AdminApi {
     );
 
     if (res.statusCode != 200) {
-      throw Exception("Failed to update bus (${res.statusCode})");
+      final decoded = _decode(res);
+      final message =
+          decoded is Map<String, dynamic> ? decoded["message"] : null;
+      throw Exception(
+        message ?? "Failed to update bus (${res.statusCode})",
+      );
     }
 
     final decoded = _decode(res);
@@ -976,6 +981,27 @@ class AdminApi {
 
     if (res.statusCode != 200) {
       throw Exception("Failed to load trip location history (${res.statusCode})");
+    }
+
+    final data = _decode(res);
+    return data is List ? data : [];
+  }
+
+  // =======================
+  // GET STOPS
+  // GET /admin/stops
+  // =======================
+  static Future<List<dynamic>> getStops() async {
+    final uri = Uri.parse("$baseUrl/admin/stops");
+
+    final res = await http.get(uri, headers: await _headers());
+
+    if (res.statusCode == 401 || res.statusCode == 403) {
+      throw Exception("Access denied. Admin login required.");
+    }
+
+    if (res.statusCode != 200) {
+      throw Exception("Failed to load stops (${res.statusCode})");
     }
 
     final data = _decode(res);

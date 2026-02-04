@@ -97,42 +97,24 @@ class _RouteSearchPageState extends State<RouteSearchPage> {
     }
   }
 
-  Widget _buildSearchTile({
+  Widget _buildSearchField({
     required String label,
     required TextEditingController controller,
     TextInputType? keyboardType,
   }) {
-    return Row(
-      children: [
-        Expanded(
-          child: SizedBox(
-            height: 36,
-            child: TextField(
-              controller: controller,
-              keyboardType: keyboardType,
-              style: const TextStyle(fontSize: 13),
-              decoration: InputDecoration(
-                labelText: label,
-                isDense: true,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              ),
-            ),
-          ),
+    return SizedBox(
+      height: 40,
+      child: TextField(
+        controller: controller,
+        keyboardType: keyboardType,
+        style: const TextStyle(fontSize: 13),
+        decoration: InputDecoration(
+          labelText: label,
+          isDense: true,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         ),
-        const SizedBox(width: 10),
-        SizedBox(
-          height: 34,
-          child: ElevatedButton(
-            onPressed: _search,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.danger,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text("Search"),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -147,76 +129,82 @@ class _RouteSearchPageState extends State<RouteSearchPage> {
             child: Card(
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child: Column(
-                  children: [
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final width = constraints.maxWidth;
-                        final crossAxisCount = width < 640
-                            ? 1
-                            : width < 980
-                                ? 2
-                                : 3;
-                        final aspect = width < 640
-                            ? 4.6
-                            : width < 980
-                                ? 4.2
-                                : 3.8;
-                        return GridView.count(
-                          crossAxisCount: crossAxisCount,
-                          shrinkWrap: true,
-                          mainAxisSpacing: 10,
-                          crossAxisSpacing: 10,
-                          childAspectRatio: aspect,
-                          physics: const NeverScrollableScrollPhysics(),
-                          children: [
-                            _buildSearchTile(
-                              label: "Route Id",
-                              controller: _routeIdCtrl,
-                              keyboardType: TextInputType.number,
-                            ),
-                            _buildSearchTile(
-                              label: "Route Name",
-                              controller: _nameCtrl,
-                            ),
-                            _buildSearchTile(
-                              label: "Origin",
-                              controller: _originCtrl,
-                            ),
-                            _buildSearchTile(
-                              label: "Destination",
-                              controller: _destinationCtrl,
-                            ),
-                            _buildSearchTile(
-                              label: "Status",
-                              controller: _statusCtrl,
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: SizedBox(
-                        height: 34,
-                        child: OutlinedButton.icon(
-                          onPressed: _clearAll,
-                          icon: const Icon(Icons.refresh_rounded),
-                          label: const Text("Clear & Refresh"),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.danger,
-                            side: const BorderSide(color: AppColors.danger),
-                            minimumSize: const Size(140, 34),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 160,
+                        child: _buildSearchField(
+                          label: "Route Id",
+                          controller: _routeIdCtrl,
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        width: 220,
+                        child: _buildSearchField(
+                          label: "Route Name",
+                          controller: _nameCtrl,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        width: 200,
+                        child: _buildSearchField(
+                          label: "Origin",
+                          controller: _originCtrl,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        width: 200,
+                        child: _buildSearchField(
+                          label: "Destination",
+                          controller: _destinationCtrl,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        width: 160,
+                        child: _buildSearchField(
+                          label: "Status",
+                          controller: _statusCtrl,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        height: 32,
+                        child: ElevatedButton.icon(
+                          onPressed: _search,
+                          icon: const Icon(Icons.search, size: 16),
+                          label: const Text("Search"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.danger,
+                            foregroundColor: Colors.white,
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 14),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        height: 32,
+                        child: ElevatedButton.icon(
+                          onPressed: _clearAll,
+                          icon: const Icon(Icons.refresh_rounded, size: 16),
+                          label: const Text("Clear"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 14),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
