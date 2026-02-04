@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../app_routes.dart';
+import '../app_routes.dart' as routes;
 import '../state/conductor_store.dart';
 import '../services/conductor_api.dart';
 import '../models/conductor_booking_model.dart';
@@ -37,7 +37,7 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage>
   String? _error;
 
   List<ConductorBooking> _all = const [];
-  int _page = 1;
+  final int _page = 1;
   final int _limit = 60;
 
   // filters (wireframe chips)
@@ -198,7 +198,7 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage>
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         ).copyWith(
-                          overlayColor: WidgetStateProperty.all(_primaryDark.withOpacity(0.14)),
+                          overlayColor: WidgetStateProperty.all(_primaryDark.withValues(alpha: 0.14)),
                         ),
                         onPressed: () => Navigator.pop(context),
                         child: const Text("Back", style: TextStyle(fontWeight: FontWeight.w900)),
@@ -239,7 +239,7 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage>
 
               Navigator.pushNamed(
                 context,
-                AppRoutes.conductorBookings,
+                routes.AppRoutes.conductorBookings ?? '',
                 arguments: {"tripId": tripId},
               );
             },
@@ -289,9 +289,9 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage>
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: _info.withOpacity(0.14),
+              color: _info.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: _info.withOpacity(0.22)),
+              border: Border.all(color: _info.withValues(alpha: 0.22)),
             ),
             child: const Icon(Icons.route_rounded, color: _info),
           ),
@@ -340,9 +340,9 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage>
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.14),
+              color: color.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: color.withOpacity(0.22)),
+              border: Border.all(color: color.withValues(alpha: 0.22)),
             ),
             child: Icon(icon, color: color, size: 18),
           ),
@@ -368,48 +368,6 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage>
     );
   }
 
-  Widget _actionsRow(int tripId) {
-    return Row(
-      children: [
-        Expanded(
-          child: SizedBox(
-            height: 48,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ).copyWith(
-                overlayColor: WidgetStateProperty.all(_primaryDark.withOpacity(0.14)),
-              ),
-              onPressed: () {
-                // Use your scan screen route
-                Navigator.pushNamed(context, AppRoutes.conductorScan);
-              },
-              icon: const Icon(Icons.qr_code_scanner_rounded),
-              label: const Text("Scan QR", style: TextStyle(fontWeight: FontWeight.w900)),
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        SizedBox(
-          height: 48,
-          child: OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: _danger,
-              side: BorderSide(color: _danger.withOpacity(0.28)),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              backgroundColor: _danger.withOpacity(0.06),
-            ),
-            onPressed: () => _showEndCancelSheet(tripId),
-            icon: const Icon(Icons.stop_circle_rounded),
-            label: const Text("End", style: TextStyle(fontWeight: FontWeight.w900)),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _filters() {
     return Wrap(
       spacing: 10,
@@ -432,9 +390,9 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage>
         height: 34,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: selected ? _primary.withOpacity(0.14) : _surface,
+          color: selected ? _primary.withValues(alpha: 0.14) : _surface,
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: selected ? _primary.withOpacity(0.22) : _border),
+          border: Border.all(color: selected ? _primary.withValues(alpha: 0.22) : _border),
         ),
         child: Center(
           child: Text(
@@ -489,9 +447,9 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage>
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: _primary.withOpacity(0.10),
+                color: _primary.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: _primary.withOpacity(0.18)),
+                border: Border.all(color: _primary.withValues(alpha: 0.18)),
               ),
               child: Center(
                 child: Text(
@@ -596,7 +554,7 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage>
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                               ).copyWith(
-                                overlayColor: WidgetStateProperty.all(_primaryDark.withOpacity(0.14)),
+                                overlayColor: WidgetStateProperty.all(_primaryDark.withValues(alpha: 0.14)),
                               ),
                               onPressed: () async {
                                 Navigator.pop(context);
@@ -669,78 +627,6 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage>
     }
   }
 
-  Future<void> _showEndCancelSheet(int tripId) async {
-    await showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) {
-        return SafeArea(
-          child: Container(
-            margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: _surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: _border),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(width: 44, height: 5, decoration: BoxDecoration(color: _border, borderRadius: BorderRadius.circular(999))),
-                const SizedBox(height: 14),
-                const Text(
-                  "Trip Control",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: _text),
-                ),
-                const SizedBox(height: 12),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _danger,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                    onPressed: () async {
-                      Navigator.pop(context);
-                      await ConductorApi.endTrip(tripId);
-                      // don’t auto-exit; wait for WS event or manual refresh
-                      _toast("End requested");
-                    },
-                    icon: const Icon(Icons.stop_circle_rounded),
-                    label: const Text("End Trip", style: TextStyle(fontWeight: FontWeight.w900)),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: _danger,
-                      side: BorderSide(color: _danger.withOpacity(0.28)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      backgroundColor: _danger.withOpacity(0.06),
-                    ),
-                    onPressed: () async {
-                      Navigator.pop(context);
-                      await ConductorApi.cancelTrip(tripId);
-                      _toast("Cancel requested");
-                    },
-                    icon: const Icon(Icons.cancel_rounded),
-                    label: const Text("Cancel Trip", style: TextStyle(fontWeight: FontWeight.w900)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Future<void> _showTripEndedDialog(String type) async {
     final isCancelled = type == "TRIP_CANCELLED";
     final title = isCancelled ? "Trip cancelled" : "Trip ended";
@@ -777,7 +663,7 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage>
                 Navigator.pop(context); // close dialog
                 // ✅ manual exit only
                 Navigator.popUntil(context, (r) => r.isFirst);
-                Navigator.pushReplacementNamed(context, AppRoutes.conductorHome);
+                Navigator.pushReplacementNamed(context, routes.AppRoutes.conductorHome ?? '');
               },
               child: const Text("Close Trip", style: TextStyle(fontWeight: FontWeight.w900)),
             ),
@@ -796,9 +682,9 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage>
       height: 28,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: c.withOpacity(0.18),
+        color: c.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: c.withOpacity(0.22)),
+        border: Border.all(color: c.withValues(alpha: 0.22)),
       ),
       child: Center(
         child: Text(
@@ -817,7 +703,7 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage>
         border: Border.all(color: _border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 18,
             offset: const Offset(0, 10),
           ),
@@ -832,9 +718,9 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage>
       height: 28,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.14),
+        color: color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withOpacity(0.22)),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
       ),
       child: Center(
         child: Text(
@@ -865,9 +751,9 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _danger.withOpacity(0.08),
+        color: _danger.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _danger.withOpacity(0.20)),
+        border: Border.all(color: _danger.withValues(alpha: 0.20)),
       ),
       child: Row(
         children: [
@@ -888,9 +774,9 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _info.withOpacity(0.10),
+        color: _info.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _info.withOpacity(0.18)),
+        border: Border.all(color: _info.withValues(alpha: 0.18)),
       ),
       child: Row(
         children: [

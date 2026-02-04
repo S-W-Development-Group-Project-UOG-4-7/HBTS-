@@ -10,7 +10,6 @@ import 'widgets/in_app_notification_banner.dart';
 import 'state/conductor_store.dart';
 import 'state/active_trip_store.dart';
 import 'services/realtime_ws.dart';
-import 'services/token_store.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() {

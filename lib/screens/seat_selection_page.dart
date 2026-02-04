@@ -72,7 +72,6 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
     final t = widget.args.trip;
 
     // Build a grid size from max row/col
-    final maxRow = _seats.isEmpty ? 0 : _seats.map((s) => s.seatRow).reduce((a, b) => a > b ? a : b);
     final maxCol = _seats.isEmpty ? 0 : _seats.map((s) => s.seatCol).reduce((a, b) => a > b ? a : b);
 
     final totalSeats = _selectedSeatIds.length;

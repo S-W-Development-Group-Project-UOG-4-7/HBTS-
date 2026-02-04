@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import '../../../config.dart';
 import 'utils/operator_session.dart'; // ✅ correct for your folder structure
 
@@ -26,6 +27,20 @@ class OperatorApi {
       ...headers,
       "Authorization": "Bearer $token",
     };
+  }
+
+  static String _normalizeImageName(String? name, {String fallback = "image.jpg"}) {
+    final raw = (name ?? "").trim();
+    if (raw.isEmpty) return fallback;
+    if (raw.contains(".")) return raw;
+    return "$raw.jpg";
+  }
+
+  static MediaType _imageMediaType(String? filename) {
+    final lower = (filename ?? "").toLowerCase();
+    if (lower.endsWith(".png")) return MediaType("image", "png");
+    if (lower.endsWith(".webp")) return MediaType("image", "webp");
+    return MediaType("image", "jpeg");
   }
 
   static Future<http.Response> _sendMultipart({
@@ -231,6 +246,40 @@ class OperatorApi {
     }).toList();
   }
 
+  // ---------- TRIP BOOKINGS ----------
+  static Future<List<Map<String, dynamic>>> fetchTripBookings({
+    required int tripId,
+  }) async {
+    final url = _uri("/operator/trips/$tripId/bookings");
+
+    final res = await http.get(
+      url,
+      headers: _authHeaders(),
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception("Failed to load trip bookings (${res.statusCode}): ${_body(res)}");
+    }
+
+    final decoded = jsonDecode(_body(res));
+
+    List<dynamic> list;
+    if (decoded is List) {
+      list = decoded;
+    } else if (decoded is Map && decoded["items"] is List) {
+      list = decoded["items"] as List;
+    } else if (decoded is Map && decoded["bookings"] is List) {
+      list = decoded["bookings"] as List;
+    } else {
+      throw Exception("Unexpected trip bookings response shape: $decoded");
+    }
+
+    return list.map((e) {
+      if (e is Map) return Map<String, dynamic>.from(e);
+      throw Exception("Booking item is not a JSON object: $e");
+    }).toList();
+  }
+
   // ---------- BUSES ----------
   static Future<List<Map<String, dynamic>>> fetchBuses() async {
     final url = _uri("/operator/buses");
@@ -326,13 +375,15 @@ class OperatorApi {
                 http.MultipartFile.fromBytes(
                   "profile",
                   profileImageBytes,
-                  filename: profileImageName ?? "profile.jpg",
+                  filename: _normalizeImageName(profileImageName, fallback: "profile.jpg"),
+                  contentType: _imageMediaType(profileImageName),
                 ),
               if (idCardImageBytes != null)
                 http.MultipartFile.fromBytes(
                   "idCard",
                   idCardImageBytes,
-                  filename: idCardImageName ?? "id_card.jpg",
+                  filename: _normalizeImageName(idCardImageName, fallback: "id_card.jpg"),
+                  contentType: _imageMediaType(idCardImageName),
                 ),
             ],
           )
@@ -408,13 +459,15 @@ class OperatorApi {
                 http.MultipartFile.fromBytes(
                   "profile",
                   profileImageBytes,
-                  filename: profileImageName ?? "profile.jpg",
+                  filename: _normalizeImageName(profileImageName, fallback: "profile.jpg"),
+                  contentType: _imageMediaType(profileImageName),
                 ),
               if (idCardImageBytes != null)
                 http.MultipartFile.fromBytes(
                   "idCard",
                   idCardImageBytes,
-                  filename: idCardImageName ?? "id_card.jpg",
+                  filename: _normalizeImageName(idCardImageName, fallback: "id_card.jpg"),
+                  contentType: _imageMediaType(idCardImageName),
                 ),
             ],
           )

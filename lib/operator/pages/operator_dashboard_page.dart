@@ -8,7 +8,6 @@ import 'operator_login_page.dart';
 import 'operator_platforms_page.dart';
 import 'operator_routes_page.dart';
 import 'operator_staff_register_page.dart';
-import 'operator_tickets_page.dart';
 import 'operator_trips_page.dart';
 import 'services/operator_api.dart';
 import 'services/utils/operator_session.dart';
@@ -589,16 +588,15 @@ class _BusTypeBreakdown extends StatelessWidget {
 class _RingChart extends StatelessWidget {
   final List<double> values;
   final List<Color> colors;
-  final double strokeWidth;
 
   const _RingChart({
     required this.values,
     required this.colors,
-    this.strokeWidth = 16,
   });
 
   @override
   Widget build(BuildContext context) {
+    const strokeWidth = 16.0;
     return CustomPaint(
       painter: _RingChartPainter(
         values: values,
@@ -1275,11 +1273,6 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
         },
       ),
       _NavItem(
-        label: "Tickets",
-        icon: Icons.confirmation_number,
-        onTap: () => _openPage(const OperatorTicketsPage(), inDrawer: inDrawer),
-      ),
-      _NavItem(
         label: "Drivers",
         icon: Icons.badge,
         onTap: () => _openPage(
@@ -1361,73 +1354,7 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
             ),
           ],
         ),
-        actions: [
-          if (showActionText)
-            Row(
-              children: [
-                TextButton.icon(
-                  onPressed: () => _openBusRegister(inDrawer: false),
-                  style: TextButton.styleFrom(
-                    foregroundColor: _primaryColor,
-                    backgroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  icon: const Icon(Icons.add_road, size: 18),
-                  label: Text(
-                    "Add Bus",
-                    style: _appFont(size: 12, weight: FontWeight.w700),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                TextButton.icon(
-                  onPressed: () => _openStaffRegister(inDrawer: false),
-                  style: TextButton.styleFrom(
-                    foregroundColor: _primaryColor,
-                    backgroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  icon: const Icon(Icons.person_add_alt, size: 18),
-                  label: Text(
-                    "Add Staff",
-                    style: _appFont(size: 12, weight: FontWeight.w700),
-                  ),
-                ),
-              ],
-            )
-          else
-            Row(
-              children: [
-                IconButton(
-                  tooltip: "Add Bus",
-                  onPressed: () => _openBusRegister(inDrawer: false),
-                  icon: const Icon(Icons.add_road),
-                ),
-                IconButton(
-                  tooltip: "Add Staff",
-                  onPressed: () => _openStaffRegister(inDrawer: false),
-                  icon: const Icon(Icons.person_add_alt),
-                ),
-              ],
-            ),
-          const SizedBox(width: 8),
-          IconButton(
-            tooltip: "Refresh",
-            onPressed: _reload,
-            icon: const Icon(Icons.refresh),
-          ),
-          IconButton(
-            tooltip: "Logout",
-            onPressed: _logout,
-            icon: const Icon(Icons.logout),
-          ),
-          const SizedBox(width: 6),
-        ],
+        actions: const [],
       ),
       body: Row(
         children: [

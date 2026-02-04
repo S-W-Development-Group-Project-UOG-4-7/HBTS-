@@ -18,7 +18,6 @@ import 'screens/booking_success_page.dart';
 import 'admin/dashboard.dart';
 import 'screens/upcoming_today_page.dart';
 
-import 'conductor/conductor_home_page.dart';
 import 'conductor/conductor_active_trip_page.dart';
 import 'conductor/conductor_shell.dart';
 import 'conductor/scan_qr_page.dart';

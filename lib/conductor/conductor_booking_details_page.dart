@@ -36,7 +36,7 @@ class _ConductorBookingDetailsPageState extends State<ConductorBookingDetailsPag
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(18),
-                      color: Colors.blue.withOpacity(0.08),
+                      color: Colors.blue.withValues(alpha: 0.08),
                     ),
                     child: Text(b.seatNumber, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
                   ),
@@ -96,7 +96,8 @@ class _ConductorBookingDetailsPageState extends State<ConductorBookingDetailsPag
                               tripId: tripId,
                             );
                             await store.loadActiveTripBookings();
-                            if (mounted) Navigator.pop(context);
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
                           } finally {
                             if (mounted) setState(() => _busy = false);
                           }
@@ -118,7 +119,8 @@ class _ConductorBookingDetailsPageState extends State<ConductorBookingDetailsPag
                               clientActionId: DateTime.now().microsecondsSinceEpoch.toString(),
                             );
                             await store.loadActiveTripBookings();
-                            if (mounted) Navigator.pop(context);
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
                           } finally {
                             if (mounted) setState(() => _busy = false);
                           }

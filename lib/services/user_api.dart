@@ -11,7 +11,6 @@ class UserApi {
 
   static Future<AppUser> fetchLoggedInUser() async {
     final token = await TokenStore.getAccessToken();
-    final baseUrl = AppConfig.baseUrl; // ✅ use config
 
     print(
       "ME CALL => ${AppConfig.baseUrl}$profileEndpoint | token=${token == null ? 'null' : 'present'}",

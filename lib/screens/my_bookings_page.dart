@@ -155,7 +155,6 @@ class _BookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
     final uiStatus = mapUiStatus(item);
 
     final dt = item.departureTime.toLocal();

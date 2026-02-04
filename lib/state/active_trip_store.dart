@@ -32,7 +32,6 @@ class ActiveTripStore extends ChangeNotifier {
       case BookingFilter.paid:
         return bookings.where((b) => b.isPaid).toList();
       case BookingFilter.all:
-      default:
         return bookings;
     }
   }

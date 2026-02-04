@@ -4,13 +4,11 @@ import 'package:provider/provider.dart';
 import '../services/token_store.dart';
 import '../services/user_api.dart';
 import '../models/user_model.dart';
-import '../app_routes.dart';
-import 'notifications_page.dart';
+import '../app_routes.dart' as routes;
 import '../state/notification_store.dart';
 import '../api/booking_api.dart';
 import '../models/my_booking_item.dart';
 import 'booking_details_page.dart';
-import 'track_my_booking_list_page.dart';
 
 
 class HomePage extends StatefulWidget {
@@ -118,7 +116,7 @@ class _HomePageState extends State<HomePage> {
 
   void _goLogin() {
     if (!mounted) return;
-    Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+    Navigator.pushNamedAndRemoveUntil(context, routes.AppRoutes.login, (_) => false);
   }
 
   Future<void> _logout() async {
@@ -132,8 +130,8 @@ class _HomePageState extends State<HomePage> {
 
     Navigator.pushNamed(
       context,
-      AppRoutes.profile,
-      arguments: ProfileArgs(
+      routes.AppRoutes.profile,
+      arguments: routes.ProfileArgs(
         id: u.id,
         name: u.name,
         email: u.email,
@@ -146,15 +144,20 @@ class _HomePageState extends State<HomePage> {
   // -------------------------
   // Navigation targets (routes you already have)
   // -------------------------
-  void _goReserve() => Navigator.pushNamed(context, AppRoutes.schedule);
-  void _goBookings() => Navigator.pushNamed(context, AppRoutes.myBookings);
+  void _goReserve() => Navigator.pushNamed(context, routes.AppRoutes.schedule);
+  void _goBookings() => Navigator.pushNamed(context, routes.AppRoutes.myBookings);
 
   // This should become your "Upcoming Schedules (today)" page later.
   // For now it can go to myBookings so you don't break anything.
-  void _goUpcomingSchedules() => Navigator.pushNamed(context, AppRoutes.upcomingToday);
+  void _goUpcomingSchedules() {
+    final route = routes.AppRoutes.upcomingToday;
+    if (route != null) {
+      Navigator.pushNamed(context, route);
+    }
+  }
 
-  void _goTrackBooking() => Navigator.pushNamed(context, AppRoutes.trackMyBooking);
-  void _goTrackBus() => Navigator.pushNamed(context, AppRoutes.trackBus);
+  void _goTrackBooking() => Navigator.pushNamed(context, routes.AppRoutes.trackMyBooking);
+  void _goTrackBus() => Navigator.pushNamed(context, routes.AppRoutes.trackBus);
 
   // Nearest trip card → booking details
   // Wire args later using your existing logic/models.
@@ -253,7 +256,7 @@ class _HomePageState extends State<HomePage> {
             userName: user.name,
             photoUrl: user.profileImage,
             onNotifications: () {
-              Navigator.pushNamed(context, AppRoutes.notifications);
+              Navigator.pushNamed(context, routes.AppRoutes.notifications);
             },
             onProfile: _openProfile,
             onLogout: _logout,
@@ -323,7 +326,6 @@ class _StylishTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
-    final blue = Colors.blue.shade700;
 
     return Container(
       padding: EdgeInsets.fromLTRB(16, topPadding + 10, 16, 14),
@@ -340,7 +342,7 @@ class _StylishTopBar extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.10),
+            color: Colors.black.withValues(alpha: 0.10),
             blurRadius: 18,
             offset: const Offset(0, 10),
           ),
@@ -353,9 +355,9 @@ class _StylishTopBar extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.18),
+              color: Colors.white.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withOpacity(0.25)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
             ),
             child: const Icon(Icons.directions_bus_rounded, color: Colors.white),
           ),
@@ -385,7 +387,7 @@ class _StylishTopBar extends StatelessWidget {
                 top: 10,
                 child: Selector<NotificationStore, int>(
                   selector: (_, store) => store.unreadCount,
-                  builder: (_, unreadCount, __) {
+                  builder: (_, unreadCount, _) {
                     if (unreadCount <= 0) return const SizedBox.shrink();
                     return Container(
                       width: 10,
@@ -406,7 +408,7 @@ class _StylishTopBar extends StatelessWidget {
             onTap: onProfile,
             child: CircleAvatar(
               radius: 18,
-              backgroundColor: Colors.white.withOpacity(0.22),
+              backgroundColor: Colors.white.withValues(alpha: 0.22),
               backgroundImage: hasPhoto ? NetworkImage(photoUrl!) : null,
               child: !hasPhoto
                   ? Text(
@@ -458,7 +460,6 @@ class _HomeBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     debugPrint("HOME BODY upcomingTrip = ${upcomingTrip == null ? 'NULL' : 'HAS DATA'}");
-    final blue = Colors.blue.shade700;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
@@ -470,7 +471,7 @@ class _HomeBody extends StatelessWidget {
             gradient: LinearGradient(
               colors: [
                 Colors.blue.shade50,
-                Colors.blue.shade100.withOpacity(0.55),
+                Colors.blue.shade100.withValues(alpha: 0.55),
               ],
             ),
             borderRadius: BorderRadius.circular(18),
@@ -622,7 +623,7 @@ class _CardShell extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 18,
             offset: const Offset(0, 10),
           ),
@@ -716,7 +717,7 @@ class _UpcomingTripCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.10),
+              color: Colors.black.withValues(alpha: 0.10),
               blurRadius: 18,
               offset: const Offset(0, 10),
             ),
@@ -815,7 +816,7 @@ class _ActionTile extends StatelessWidget {
           border: Border.all(color: Colors.blue.shade100), // Blue border
           boxShadow: [
             BoxShadow(
-              color: Colors.blue.withOpacity(0.08), // Blue-tinted shadow
+              color: Colors.blue.withValues(alpha: 0.08), // Blue-tinted shadow
               blurRadius: 14,
               offset: const Offset(0, 8),
             ),
@@ -878,7 +879,7 @@ class _BigActionCard extends StatelessWidget {
           border: Border.all(color: Colors.grey.shade300), // Slightly darker border
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 18,
               offset: const Offset(0, 10),
             ),
@@ -958,7 +959,7 @@ class _SpotlightBottomNav extends StatelessWidget {
                     border: Border.all(color: Colors.grey.shade200),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.10),
+                        color: Colors.black.withValues(alpha: 0.10),
                         blurRadius: 18,
                         offset: const Offset(0, 10),
                       ),
@@ -1009,7 +1010,7 @@ class _SpotlightBottomNav extends StatelessWidget {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: blue.withOpacity(0.35),
+                          color: blue.withValues(alpha: 0.35),
                           blurRadius: 22,
                           offset: const Offset(0, 12),
                         ),

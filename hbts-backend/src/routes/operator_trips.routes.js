@@ -156,6 +156,42 @@ router.get("/:tripId", async (req, res) => {
   }
 });
 
+// View bookings for a specific trip (operator scoped)
+router.get("/:tripId/bookings", async (req, res) => {
+  try {
+    const tripId = Number(req.params.tripId);
+    if (!Number.isInteger(tripId)) {
+      return res.status(400).json({ message: "Invalid trip id" });
+    }
+
+    const ownedTrip = await ensureOwned("trips", "trip_id", tripId, req.operatorId);
+    if (!ownedTrip) {
+      return res.status(404).json({ message: "Trip not found" });
+    }
+
+    const { rows } = await pool.query(
+      `
+      SELECT
+        b.booking_id,
+        b.trip_id,
+        COUNT(b.seat_id) AS seats_booked
+      FROM bookings b
+      JOIN trips t ON t.trip_id = b.trip_id
+      WHERE b.trip_id = $1
+        AND t.operator_id = $2
+        AND t.deleted_at IS NULL
+      GROUP BY b.booking_id, b.trip_id
+      ORDER BY b.booking_id DESC
+      `,
+      [tripId, req.operatorId]
+    );
+
+    return res.json({ tripId, count: rows.length, items: rows });
+  } catch (e) {
+    return res.status(500).json({ message: "Failed to load trip bookings", error: e.message });
+  }
+});
+
 // View assigned trips (filter by driverId or busId)
 router.get("/assigned/all", async (req, res) => {
   try {

@@ -220,6 +220,8 @@ router.post(
     const { columns, values } = await buildInsert("drivers", {
       [nameColumn]: name.trim(),
       phone: phone.trim(),
+      // Prevent default user_id collisions when registering drivers from operator UI.
+      user_id: null,
       email: email?.trim() ?? null,
       id_number: idNumber || id_number || null,
       license_no: licenseValue,

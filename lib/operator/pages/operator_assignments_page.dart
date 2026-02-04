@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'services/operator_api.dart';
 import 'operator_staff_register_page.dart';
 import 'operator_bus_register_page.dart';
+import '../../config.dart';
 
 enum OperatorAssignmentsView { all, drivers, conductors, buses }
 
@@ -80,10 +81,24 @@ class _OperatorAssignmentsPageState extends State<OperatorAssignmentsPage> {
     return null;
   }
 
+  String? _resolveUrl(String? url) {
+    if (url == null) return null;
+    final trimmed = url.trim();
+    if (trimmed.isEmpty) return null;
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+      return trimmed;
+    }
+    if (trimmed.startsWith("/")) {
+      return "${AppConfig.baseUrl}$trimmed";
+    }
+    return "${AppConfig.baseUrl}/$trimmed";
+  }
+
   Widget _avatar(String? url, IconData icon) {
-    if (url != null && url.isNotEmpty) {
+    final resolved = _resolveUrl(url);
+    if (resolved != null) {
       return CircleAvatar(
-        backgroundImage: NetworkImage(url),
+        backgroundImage: NetworkImage(resolved),
         backgroundColor: Colors.blue.shade50,
       );
     }
@@ -94,13 +109,30 @@ class _OperatorAssignmentsPageState extends State<OperatorAssignmentsPage> {
   }
 
   Widget _docThumb(String label, String url) {
+    final resolved = _resolveUrl(url);
+    if (resolved == null) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            color: Colors.blue.shade50,
+            alignment: Alignment.center,
+            child: Icon(Icons.image_not_supported, color: Colors.blue.shade200),
+          ),
+          const SizedBox(height: 4),
+          Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade700)),
+        ],
+      );
+    }
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
           child: Image.network(
-            url,
+            resolved,
             width: 72,
             height: 72,
             fit: BoxFit.cover,
@@ -178,7 +210,6 @@ class _OperatorAssignmentsPageState extends State<OperatorAssignmentsPage> {
       case OperatorAssignmentsView.buses:
         return "Buses";
       case OperatorAssignmentsView.all:
-      default:
         return "Drivers, Conductors, and Buses";
     }
   }
@@ -226,7 +257,7 @@ class _OperatorAssignmentsPageState extends State<OperatorAssignmentsPage> {
                     final initialRole = widget.view == OperatorAssignmentsView.conductors
                         ? "conductor"
                         : "driver";
-                    final allowRoleSelection = widget.view == OperatorAssignmentsView.all;
+                    final allowRoleSelection = true;
 
                     final created = await Navigator.push<bool>(
                       context,

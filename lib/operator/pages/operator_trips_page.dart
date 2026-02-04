@@ -33,6 +33,11 @@ class _OperatorTripsPageState extends State<OperatorTripsPage> {
   }
 
   String _safeStr(dynamic v) => (v == null) ? "-" : v.toString();
+  int? _parseInt(dynamic v) {
+    if (v == null) return null;
+    if (v is int) return v;
+    return int.tryParse(v.toString());
+  }
 
   Color _statusColor(String status) {
     final normalized = status.toLowerCase();
@@ -100,6 +105,143 @@ class _OperatorTripsPageState extends State<OperatorTripsPage> {
     final start = _range!.start.toIso8601String().split("T").first;
     final end = _range!.end.toIso8601String().split("T").first;
     return "$start to $end";
+  }
+
+  void _showTripBookings(Map<String, dynamic> trip) {
+    final tripId = _parseInt(trip["trip_id"]);
+    if (tripId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Invalid trip id.")),
+      );
+      return;
+    }
+
+    final routeName = _safeStr(trip["route_name"]);
+    final from = _safeStr(trip["from_location"]);
+    final to = _safeStr(trip["to_location"]);
+    final title = routeName != "-"
+        ? routeName
+        : ((from != "-" || to != "-") ? "$from -> $to" : "Trip #$tripId");
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.6,
+          minChildSize: 0.3,
+          maxChildSize: 0.9,
+          builder: (context, scrollController) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                12,
+                16,
+                16 + MediaQuery.of(context).padding.bottom,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    "Booking Details",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "$title (Trip #$tripId)",
+                    style: TextStyle(color: Colors.grey.shade700),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: FutureBuilder<List<Map<String, dynamic>>>(
+                      future: OperatorApi.fetchTripBookings(tripId: tripId),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        if (snapshot.hasError) {
+                          return Center(child: Text("Error: ${snapshot.error}"));
+                        }
+                        final bookings = snapshot.data ?? [];
+                        if (bookings.isEmpty) {
+                          return const Center(child: Text("No bookings for this trip."));
+                        }
+
+                        return ListView.separated(
+                          controller: scrollController,
+                          itemCount: bookings.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final booking = bookings[index];
+                            final bookingId = _safeStr(
+                              booking["booking_id"] ?? booking["bookingId"],
+                            );
+                            final seatsBooked = _safeStr(
+                              booking["seats_booked"] ?? booking["seatsBooked"] ?? "1",
+                            );
+
+                            return Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade50,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.blue.shade100),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.confirmation_number, color: Colors.blue),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "Booking ID: $bookingId",
+                                          style: const TextStyle(fontWeight: FontWeight.w600),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          "Seats booked: $seatsBooked",
+                                          style: TextStyle(color: Colors.grey.shade700),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -215,61 +357,65 @@ class _OperatorTripsPageState extends State<OperatorTripsPage> {
                       return Card(
                         elevation: 0,
                         margin: const EdgeInsets.only(bottom: 12),
+                        clipBehavior: Clip.antiAlias,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                           side: BorderSide(color: Colors.blue.shade100),
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(14),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.directions_bus, color: Colors.blue),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      title,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
+                        child: InkWell(
+                          onTap: () => _showTripBookings(trip),
+                          child: Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.directions_bus, color: Colors.blue),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        title,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: _statusColor(status).withOpacity(0.12),
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Text(
-                                      status.toUpperCase(),
-                                      style: TextStyle(
-                                        color: _statusColor(status),
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: _statusColor(status).withOpacity(0.12),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        status.toUpperCase(),
+                                        style: TextStyle(
+                                          color: _statusColor(status),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                "Date: $date | Depart: $depart | Arrive: $arrive",
-                                style: TextStyle(color: Colors.grey.shade700),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                "Bus: $bus | Driver: $driver",
-                                style: TextStyle(color: Colors.grey.shade700),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                "Seats: $seatsAvailable / $seatsTotal | Fare: $fare",
-                                style: TextStyle(color: Colors.grey.shade700),
-                              ),
-                            ],
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  "Date: $date | Depart: $depart | Arrive: $arrive",
+                                  style: TextStyle(color: Colors.grey.shade700),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  "Bus: $bus | Driver: $driver",
+                                  style: TextStyle(color: Colors.grey.shade700),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  "Seats: $seatsAvailable / $seatsTotal | Fare: $fare",
+                                  style: TextStyle(color: Colors.grey.shade700),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       );

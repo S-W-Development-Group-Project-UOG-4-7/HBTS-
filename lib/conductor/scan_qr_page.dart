@@ -53,15 +53,15 @@ class _ConductorScanPageState extends State<ConductorScanPage> {
     if (_lastQr == clean) return;
     _lastQr = clean;
 
+    final store = context.read<ConductorStore>();
+    final activeTripId = store.activeTrip?.tripId;
+
     setState(() => _busy = true);
 
     // pause scanning while verifying
     await _controller.stop();
 
     try {
-      final store = context.read<ConductorStore>();
-      final activeTripId = store.activeTrip?.tripId;
-
       final res = await ConductorApi.scanVerify(
         qr: clean,
         tripId: activeTripId, // optional but recommended
@@ -150,7 +150,7 @@ class _ConductorScanPageState extends State<ConductorScanPage> {
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ).copyWith(
-                      overlayColor: WidgetStateProperty.all(_primaryDark.withOpacity(0.14)),
+                      overlayColor: WidgetStateProperty.all(_primaryDark.withValues(alpha: 0.14)),
                     ),
                     onPressed: () => Navigator.pop(context),
                     child: const Text("OK", style: TextStyle(fontWeight: FontWeight.w900)),
@@ -251,7 +251,7 @@ class _ConductorScanPageState extends State<ConductorScanPage> {
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                               ).copyWith(
-                                overlayColor: WidgetStateProperty.all(_primaryDark.withOpacity(0.14)),
+                                overlayColor: WidgetStateProperty.all(_primaryDark.withValues(alpha: 0.14)),
                               ),
                               onPressed: () async {
                                 Navigator.pop(context);
@@ -375,9 +375,9 @@ class _ConductorScanPageState extends State<ConductorScanPage> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withOpacity(0.30),
+                      Colors.black.withValues(alpha: 0.30),
                       Colors.transparent,
-                      Colors.black.withOpacity(0.35),
+                      Colors.black.withValues(alpha: 0.35),
                     ],
                   ),
                 ),
@@ -392,7 +392,7 @@ class _ConductorScanPageState extends State<ConductorScanPage> {
               height: 260,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: Colors.white.withOpacity(0.92), width: 2),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.92), width: 2),
               ),
             ),
           ),
@@ -410,9 +410,9 @@ class _ConductorScanPageState extends State<ConductorScanPage> {
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: _info.withOpacity(0.14),
+                      color: _info.withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: _info.withOpacity(0.22)),
+                      border: Border.all(color: _info.withValues(alpha: 0.22)),
                     ),
                     child: const Icon(Icons.qr_code_scanner_rounded, color: _info),
                   ),
@@ -449,7 +449,7 @@ class _ConductorScanPageState extends State<ConductorScanPage> {
         border: Border.all(color: _border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 18,
             offset: const Offset(0, 10),
           ),
@@ -464,9 +464,9 @@ class _ConductorScanPageState extends State<ConductorScanPage> {
       height: 28,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.14),
+        color: color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withOpacity(0.22)),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
       ),
       child: Center(
         child: Text(
@@ -482,9 +482,9 @@ class _ConductorScanPageState extends State<ConductorScanPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _info.withOpacity(0.10),
+        color: _info.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _info.withOpacity(0.18)),
+        border: Border.all(color: _info.withValues(alpha: 0.18)),
       ),
       child: Row(
         children: [

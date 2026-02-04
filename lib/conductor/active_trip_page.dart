@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../app_routes.dart';
-import '../../state/conductor_store.dart';
+import '../app_routes.dart' as routes;
+import '../state/conductor_store.dart';
 
 class ConductorActiveTripPage extends StatefulWidget {
   const ConductorActiveTripPage({super.key});
@@ -21,7 +21,6 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage> {
 
   static const _success = Color(0xFF16A34A);
   static const _warning = Color(0xFFF59E0B);
-  static const _danger = Color(0xFFDC2626);
   static const _info = Color(0xFF0EA5E9);
   static const _muted = Color(0xFF94A3B8);
 
@@ -98,7 +97,7 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage> {
                             minimumSize: const Size.fromHeight(52),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           ),
-                          onPressed: () => Navigator.pushNamed(context, AppRoutes.conductorScan),
+                          onPressed: () => Navigator.pushNamed(context, routes.AppRoutes.conductorScan ?? ''),
                           icon: const Icon(Icons.qr_code_scanner_rounded),
                           label: const Text("Scan QR", style: TextStyle(fontWeight: FontWeight.w900)),
                         ),
@@ -183,7 +182,7 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage> {
     return _card(
       padding: 14,
       child: InkWell(
-        onTap: () => Navigator.pushNamed(context, AppRoutes.conductorBookingDetails, arguments: {"booking": b}),
+        onTap: () => Navigator.pushNamed(context, routes.AppRoutes.conductorBookingDetails ?? '', arguments: {"booking": b} as Object),
         child: Row(
           children: [
             Container(
@@ -191,9 +190,9 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage> {
               height: 62,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: _primary.withOpacity(0.08),
+                color: _primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: _primary.withOpacity(0.18)),
+                border: Border.all(color: _primary.withValues(alpha: 0.18)),
               ),
               child: Text(b.seatNumber, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: _primary)),
             ),
@@ -232,9 +231,9 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage> {
       height: 32,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withOpacity(0.25)),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon, size: 16, color: color),
@@ -248,9 +247,9 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
+        color: color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.22)),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
