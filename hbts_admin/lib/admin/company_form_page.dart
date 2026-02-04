@@ -132,10 +132,19 @@ class _CompanyFormPageState extends State<CompanyFormPage> {
                   validator: _required,
                 ),
                 const SizedBox(height: 18),
-                ElevatedButton.icon(
-                  onPressed: isEdit ? _updateRecord : _addRecord,
-                  icon: const Icon(Icons.save_outlined),
-                  label: Text(isEdit ? "Update Company" : "Add Company"),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: SizedBox(
+                    height: 40,
+                    child: ElevatedButton.icon(
+                      onPressed: isEdit ? _updateRecord : _addRecord,
+                      icon: const Icon(Icons.save_outlined, size: 18),
+                      label: Text(isEdit ? "Update Company" : "Add Company"),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                      ),
+                    ),
+                  ),
                 ),
                 if (_saving)
                   const Padding(

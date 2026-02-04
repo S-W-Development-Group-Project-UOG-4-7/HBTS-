@@ -14,6 +14,34 @@ const getBusColumns = async () => {
   return cachedBusColumns;
 };
 
+let cachedUserColumns = null;
+const getUserColumns = async () => {
+  if (cachedUserColumns) return cachedUserColumns;
+  const { rows } = await pool.query(
+    `
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_name = 'users'
+    `
+  );
+  cachedUserColumns = rows.map((r) => r.column_name);
+  return cachedUserColumns;
+};
+
+let cachedConductorColumns = null;
+const getConductorColumns = async () => {
+  if (cachedConductorColumns) return cachedConductorColumns;
+  const { rows } = await pool.query(
+    `
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_name = 'conductors'
+    `
+  );
+  cachedConductorColumns = rows.map((r) => r.column_name);
+  return cachedConductorColumns;
+};
+
 const pickColumn = (columns, candidates) =>
   candidates.find((c) => columns.includes(c));
 
@@ -34,6 +62,8 @@ const normalizeBusInput = (body) => {
 
   return {
     operatorId: body.operatorId ?? body.operator_id ?? body.operator ?? null,
+    conductorId:
+      body.conductorId ?? body.conductor_id ?? body.conductor ?? null,
     licensePlateNo:
       body.licensePlateNo ?? body.license_plate_no ?? body.license_plate ?? null,
     routeNo: body.routeNo ?? body.route_no ?? body.route ?? null,
@@ -41,6 +71,110 @@ const normalizeBusInput = (body) => {
     model: body.model ?? null,
     serviceType: normalizedServiceType,
   };
+};
+
+const resolveOperatorCompanyId = async (operatorUserId) => {
+  if (operatorUserId == null) return null;
+  const userCols = await getUserColumns();
+  if (!userCols.length) return null;
+
+  const uIdCol = pickColumn(userCols, ["user_id", "id"]);
+  const uRoleCol = pickColumn(userCols, ["role_id", "roleid"]);
+  const uOperatorIdCol = pickColumn(userCols, [
+    "operator_id",
+    "operatorId",
+    "company_id",
+  ]);
+
+  if (!uIdCol || !uRoleCol || !uOperatorIdCol) return null;
+
+  const result = await pool.query(
+    `
+    SELECT "${uOperatorIdCol}" AS operator_id
+    FROM users
+    WHERE "${uIdCol}" = $1
+      AND "${uRoleCol}" = 5
+    LIMIT 1
+    `,
+    [operatorUserId]
+  );
+  return result.rows[0]?.operator_id ?? null;
+};
+
+const assignConductorToBus = async ({ busId, conductorId, operatorId }) => {
+  const columns = await getConductorColumns();
+  if (!columns.length) return;
+
+  const cIdCol = pickColumn(columns, ["conductor_id", "id", "conductorid"]);
+  const cBusIdCol = pickColumn(columns, ["bus_id", "busId"]);
+  const cOperatorIdCol = pickColumn(columns, [
+    "operator_id",
+    "operatorId",
+    "company_id",
+  ]);
+  const cUpdatedAtCol = pickColumn(columns, ["updated_at"]);
+
+  if (!cIdCol || !cBusIdCol) return;
+
+  if (conductorId == null) {
+    const updates = [`"${cBusIdCol}" = NULL`];
+    if (cUpdatedAtCol) updates.push(`"${cUpdatedAtCol}" = now()`);
+    await pool.query(
+      `
+      UPDATE conductors
+      SET ${updates.join(", ")}
+      WHERE "${cBusIdCol}" = $1
+      `,
+      [busId]
+    );
+    return;
+  }
+
+  const existing = await pool.query(
+    `SELECT * FROM conductors WHERE "${cIdCol}" = $1 LIMIT 1`,
+    [conductorId]
+  );
+  if (!existing.rows.length) {
+    throw new Error("Invalid conductor_id");
+  }
+
+  if (operatorId != null && cOperatorIdCol) {
+    const conductorOperatorId = existing.rows[0][cOperatorIdCol];
+    if (Number(conductorOperatorId) !== Number(operatorId)) {
+      // Align conductor operator_id to the bus operator_id (company) on assignment.
+      await pool.query(
+        `
+        UPDATE conductors
+        SET "${cOperatorIdCol}" = $1
+        WHERE "${cIdCol}" = $2
+        `,
+        [operatorId, conductorId]
+      );
+    }
+  }
+
+  const clearUpdates = [`"${cBusIdCol}" = NULL`];
+  if (cUpdatedAtCol) clearUpdates.push(`"${cUpdatedAtCol}" = now()`);
+  await pool.query(
+    `
+    UPDATE conductors
+    SET ${clearUpdates.join(", ")}
+    WHERE "${cBusIdCol}" = $1
+      AND "${cIdCol}" <> $2
+    `,
+    [busId, conductorId]
+  );
+
+  const setUpdates = [`"${cBusIdCol}" = $1`];
+  if (cUpdatedAtCol) setUpdates.push(`"${cUpdatedAtCol}" = now()`);
+  await pool.query(
+    `
+    UPDATE conductors
+    SET ${setUpdates.join(", ")}
+    WHERE "${cIdCol}" = $2
+    `,
+    [busId, conductorId]
+  );
 };
 
 const fetchBusById = async (id, idCol = "bus_id") => {
@@ -56,9 +190,17 @@ const fetchBusById = async (id, idCol = "bus_id") => {
       b.service_type,
       b.created_at,
       b.updated_at,
-      c.name AS operator_name
+      u.user_id AS operator_user_id,
+      u.name AS operator_name
     FROM buses b
-    LEFT JOIN company c ON c.operator_id = b.operator_id
+    LEFT JOIN LATERAL (
+      SELECT user_id, name
+      FROM users
+      WHERE role_id = 5
+        AND operator_id = b.operator_id
+      ORDER BY user_id ASC
+      LIMIT 1
+    ) u ON true
     WHERE b."${idCol}" = $1
     LIMIT 1
     `,
@@ -160,9 +302,17 @@ export const listBuses = async (req, res) => {
         b.service_type,
         b.created_at,
         b.updated_at,
-        c.name AS operator_name
+        u.user_id AS operator_user_id,
+        u.name AS operator_name
       FROM buses b
-      LEFT JOIN company c ON c.operator_id = b.operator_id
+      LEFT JOIN LATERAL (
+        SELECT user_id, name
+        FROM users
+        WHERE role_id = 5
+          AND operator_id = b.operator_id
+        ORDER BY user_id ASC
+        LIMIT 1
+      ) u ON true
       ${whereSql}
       ORDER BY b.created_at DESC
       `,
@@ -190,6 +340,15 @@ export const addBus = async (req, res) => {
   try {
     const columns = await getBusColumns();
     const data = normalizeBusInput(req.body ?? {});
+    const operatorCompanyId =
+      data.operatorId != null
+        ? await resolveOperatorCompanyId(data.operatorId)
+        : null;
+    if (data.operatorId != null && operatorCompanyId == null) {
+      return res
+        .status(400)
+        .json({ message: "Invalid operator (user role_id=5) selected" });
+    }
 
     const cols = [];
     const params = [];
@@ -202,7 +361,10 @@ export const addBus = async (req, res) => {
       placeholders.push(`$${params.length}`);
     };
 
-    addParam(pickColumn(columns, ["operator_id", "operatorid", "operatorId"]), data.operatorId);
+    addParam(
+      pickColumn(columns, ["operator_id", "operatorid", "operatorId"]),
+      operatorCompanyId
+    );
     addParam(
       pickColumn(columns, ["license_plate_no", "license_plate", "licensePlateNo"]),
       data.licensePlateNo
@@ -243,10 +405,26 @@ export const addBus = async (req, res) => {
     }
 
     const idCol = getIdColumn(columns) ?? "bus_id";
-    const full = await fetchBusById(row[idCol] ?? row.bus_id, idCol);
+    const busId = row[idCol] ?? row.bus_id;
+    if (data.conductorId !== undefined) {
+      await assignConductorToBus({
+        busId,
+        conductorId: data.conductorId,
+        operatorId: row.operator_id ?? operatorCompanyId ?? null,
+      });
+    }
+    const full = await fetchBusById(busId, idCol);
 
     return res.status(201).json(full ?? row);
   } catch (err) {
+    const message =
+      err?.message?.includes("Invalid conductor_id") ||
+      err?.message?.includes("Conductor operator_id")
+        ? err.message
+        : null;
+    if (message) {
+      return res.status(400).json({ message });
+    }
     console.error("Add bus error:", err);
     res.status(500).json({ message: "Failed to add bus" });
   }
@@ -257,6 +435,15 @@ export const updateBus = async (req, res) => {
     const { id } = req.params;
     const columns = await getBusColumns();
     const data = normalizeBusInput(req.body ?? {});
+    const operatorCompanyId =
+      data.operatorId != null
+        ? await resolveOperatorCompanyId(data.operatorId)
+        : null;
+    if (data.operatorId != null && operatorCompanyId == null) {
+      return res
+        .status(400)
+        .json({ message: "Invalid operator (user role_id=5) selected" });
+    }
 
     const updates = [];
     const params = [];
@@ -267,7 +454,10 @@ export const updateBus = async (req, res) => {
       params.push(value ?? null);
     };
 
-    addUpdate(pickColumn(columns, ["operator_id", "operatorid", "operatorId"]), data.operatorId);
+    addUpdate(
+      pickColumn(columns, ["operator_id", "operatorid", "operatorId"]),
+      operatorCompanyId
+    );
     addUpdate(
       pickColumn(columns, ["license_plate_no", "license_plate", "licensePlateNo"]),
       data.licensePlateNo
@@ -313,9 +503,25 @@ export const updateBus = async (req, res) => {
       return res.status(404).json({ message: "Bus not found" });
     }
 
+    if (data.conductorId !== undefined) {
+      await assignConductorToBus({
+        busId: id,
+        conductorId: data.conductorId,
+        operatorId: result.rows[0]?.operator_id ?? operatorCompanyId ?? null,
+      });
+    }
+
     const full = await fetchBusById(id, idCol);
     return res.json(full ?? result.rows[0]);
   } catch (err) {
+    const message =
+      err?.message?.includes("Invalid conductor_id") ||
+      err?.message?.includes("Conductor operator_id")
+        ? err.message
+        : null;
+    if (message) {
+      return res.status(400).json({ message });
+    }
     console.error("Update bus error:", err);
     res.status(500).json({ message: "Failed to update bus" });
   }

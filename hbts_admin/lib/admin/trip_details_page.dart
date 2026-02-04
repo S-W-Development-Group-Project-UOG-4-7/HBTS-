@@ -66,6 +66,11 @@ class _TripDetailsPageState extends State<TripDetailsPage>
     return fallback;
   }
 
+  int? _toInt(dynamic raw) {
+    if (raw is int) return raw;
+    return int.tryParse(raw?.toString() ?? "");
+  }
+
   void _applyTripUpdate(Map<String, dynamic> updated) {
     setState(() {
       _trip = {..._trip, ...updated};
@@ -82,6 +87,9 @@ class _TripDetailsPageState extends State<TripDetailsPage>
     final orderCtrl = TextEditingController();
     final timeCtrl = TextEditingController();
     bool boardingAllowed = true;
+    List<Map<String, dynamic>> stops = [];
+    int? selectedStopId;
+    bool loadingStops = true;
 
     Future<void> pickTime(StateSetter setState) async {
       final picked = await showTimePicker(
@@ -95,12 +103,18 @@ class _TripDetailsPageState extends State<TripDetailsPage>
     }
 
     String? combineDateAndTime(String? dateRaw, String timeRaw) {
-      final date = (dateRaw ?? "").trim();
       final time = timeRaw.trim();
       if (time.isEmpty) return null;
       if (time.contains("-")) return time;
+
+      String date = (dateRaw ?? "").trim();
+      if (date.isEmpty) return time.length == 5 ? "$time:00" : time;
+
+      if (date.contains("T")) {
+        date = date.split("T").first;
+      }
+
       final safeTime = time.length == 5 ? "$time:00" : time;
-      if (date.isEmpty) return safeTime;
       return "$date $safeTime";
     }
 
@@ -108,15 +122,61 @@ class _TripDetailsPageState extends State<TripDetailsPage>
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setState) {
+          Future<void> loadStopsOnce() async {
+            if (!loadingStops) return;
+            try {
+              final data = await AdminApi.getStops();
+              stops = data.cast<Map<String, dynamic>>();
+            } catch (_) {
+              stops = [];
+            } finally {
+              setState(() => loadingStops = false);
+            }
+          }
+
+          loadStopsOnce();
+
+          String stopLabel(Map<String, dynamic> stop) {
+            final id = stop["stop_id"] ?? stop["id"] ?? "-";
+            final name = stop["stop_name"] ?? stop["name"] ?? "Stop";
+            final code = stop["stop_code"] ?? stop["code"];
+            final city = stop["city"];
+            final parts = <String>[
+              name.toString(),
+              if (code != null && code.toString().trim().isNotEmpty)
+                code.toString(),
+              if (city != null && city.toString().trim().isNotEmpty)
+                city.toString(),
+            ];
+            return "${parts.join(" • ")} (ID: $id)";
+          }
+
           return AlertDialog(
             title: const Text("Add Trip Stop"),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(
-                  controller: stopIdCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: "Stop ID"),
+                if (loadingStops)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 8),
+                    child: LinearProgressIndicator(),
+                  ),
+                DropdownButtonFormField<int?>(
+                  value: selectedStopId,
+                  items: stops
+                      .map(
+                        (s) => DropdownMenuItem<int?>(
+                          value: _toInt(s["stop_id"] ?? s["id"]),
+                          child: Text(stopLabel(s)),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    selectedStopId = value;
+                    stopIdCtrl.text = value?.toString() ?? "";
+                    setState(() {});
+                  },
+                  decoration: const InputDecoration(labelText: "Stop"),
                 ),
                 const SizedBox(height: 8),
                 TextField(
@@ -150,7 +210,10 @@ class _TripDetailsPageState extends State<TripDetailsPage>
                 child: const Text("Cancel"),
               ),
               ElevatedButton(
-                onPressed: () => Navigator.pop(dialogContext, true),
+                onPressed: () {
+                  if (selectedStopId == null) return;
+                  Navigator.pop(dialogContext, true);
+                },
                 child: const Text("Add"),
               ),
             ],
@@ -267,36 +330,38 @@ class _TripDetailsPageState extends State<TripDetailsPage>
                   ),
                 ),
                 const SizedBox(height: 12),
-                ElevatedButton.icon(
-                  onPressed: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => TripFormPage(trip: _trip),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: SizedBox(
+                    height: 40,
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => TripFormPage(trip: _trip),
+                          ),
+                        );
+                        if (!context.mounted) return;
+                        if (result is Map<String, dynamic>) {
+                          _applyTripUpdate(result);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Trip updated")),
+                          );
+                          return;
+                        }
+                        if (result == true) {
+                          setState(() {
+                            _stopsFuture = _loadStops();
+                            _historyFuture = _loadHistory();
+                          });
+                        }
+                      },
+                      icon: const Icon(Icons.edit, size: 18),
+                      label: const Text("Edit Trip"),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
                       ),
-                    );
-                    if (!context.mounted) return;
-                    if (result is Map<String, dynamic>) {
-                      _applyTripUpdate(result);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Trip updated")),
-                      );
-                      return;
-                    }
-                    if (result == true) {
-                      setState(() {
-                        _stopsFuture = _loadStops();
-                        _historyFuture = _loadHistory();
-                      });
-                    }
-                  },
-                  icon: const Icon(Icons.edit),
-                  label: const Text("Edit Trip"),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(0, 36),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
                     ),
                   ),
                 ),
@@ -318,7 +383,7 @@ class _TripDetailsPageState extends State<TripDetailsPage>
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                     child: Align(
-                      alignment: Alignment.centerRight,
+                      alignment: Alignment.centerLeft,
                       child: SizedBox(
                         height: 34,
                         child: OutlinedButton.icon(

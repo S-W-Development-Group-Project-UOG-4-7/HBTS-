@@ -163,15 +163,20 @@ class _CustomerDetailsPageState extends State<CustomerDetailsPage> {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.delete),
-                label: const Text("Delete"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.danger,
+            Align(
+              alignment: Alignment.centerLeft,
+              child: SizedBox(
+                height: 36,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.delete, size: 18),
+                  label: const Text("Delete"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.danger,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                  onPressed: _deletePassenger,
                 ),
-                onPressed: _deletePassenger,
               ),
             ),
           ],

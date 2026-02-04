@@ -19,10 +19,10 @@ class _RouteFormPageState extends State<RouteFormPage> {
   final _destinationCtrl = TextEditingController();
   final _distanceCtrl = TextEditingController();
   final _fareCtrl = TextEditingController();
-  final _statusCtrl = TextEditingController();
   final _descriptionCtrl = TextEditingController();
 
   bool _saving = false;
+  String? _selectedStatus;
 
   int? get _routeId {
     final route = widget.route;
@@ -51,8 +51,12 @@ class _RouteFormPageState extends State<RouteFormPage> {
       _distanceCtrl.text =
           _pick(route, ["distance_km", "distance"]) ?? "";
       _fareCtrl.text = _pick(route, ["fare", "price"]) ?? "";
-      _statusCtrl.text = _pick(route, ["status", "route_status"]) ?? "";
+      final status = _pick(route, ["status", "route_status", "routeStatus"]);
+      _selectedStatus =
+          status?.trim().isNotEmpty == true ? status!.trim() : "active";
       _descriptionCtrl.text = _pick(route, ["description", "notes"]) ?? "";
+    } else {
+      _selectedStatus = "active";
     }
   }
 
@@ -64,7 +68,6 @@ class _RouteFormPageState extends State<RouteFormPage> {
     _destinationCtrl.dispose();
     _distanceCtrl.dispose();
     _fareCtrl.dispose();
-    _statusCtrl.dispose();
     _descriptionCtrl.dispose();
     super.dispose();
   }
@@ -95,7 +98,7 @@ class _RouteFormPageState extends State<RouteFormPage> {
       "to_location": _destinationCtrl.text.trim(),
       "distance": _parseNum(_distanceCtrl.text),
       "fare": _parseNum(_fareCtrl.text),
-      "status": _statusCtrl.text.trim(),
+      "status": _selectedStatus ?? "active",
       "description": _descriptionCtrl.text.trim(),
     };
   }
@@ -254,9 +257,32 @@ class _RouteFormPageState extends State<RouteFormPage> {
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 12),
-                _field(
-                  label: "Status",
-                  controller: _statusCtrl,
+                DropdownButtonFormField<String>(
+                  value: _selectedStatus ?? "active",
+                  items: const [
+                    DropdownMenuItem(
+                      value: "active",
+                      child: Text("active"),
+                    ),
+                    DropdownMenuItem(
+                      value: "inactive",
+                      child: Text("inactive"),
+                    ),
+                    DropdownMenuItem(
+                      value: "paused",
+                      child: Text("paused"),
+                    ),
+                    DropdownMenuItem(
+                      value: "suspended",
+                      child: Text("suspended"),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    setState(() => _selectedStatus = value ?? "active");
+                  },
+                  decoration: const InputDecoration(
+                    labelText: "Status",
+                  ),
                 ),
                 const SizedBox(height: 12),
                 _field(
@@ -266,35 +292,53 @@ class _RouteFormPageState extends State<RouteFormPage> {
                 ),
                 const SizedBox(height: 18),
                 if (!isEdit)
-                  ElevatedButton.icon(
-                    onPressed: _addRecord,
-                    icon: const Icon(Icons.add_circle_outline),
-                    label: const Text("Add Record"),
-                  ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: isEdit ? _updateRecord : null,
-                        icon: const Icon(Icons.save_outlined),
-                        label: const Text("Update"),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: isEdit ? _deleteRecord : null,
-                        icon: const Icon(Icons.delete_outline),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.danger,
-                          side: const BorderSide(color: AppColors.danger),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      height: 40,
+                      child: ElevatedButton.icon(
+                        onPressed: _addRecord,
+                        icon: const Icon(Icons.add_circle_outline, size: 18),
+                        label: const Text("Add Record"),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
                         ),
-                        label: const Text("Delete"),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                if (isEdit) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        height: 36,
+                        child: ElevatedButton.icon(
+                          onPressed: _updateRecord,
+                          icon: const Icon(Icons.save_outlined, size: 18),
+                          label: const Text("Update"),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        height: 36,
+                        child: ElevatedButton.icon(
+                          onPressed: _deleteRecord,
+                          icon: const Icon(Icons.delete_outline, size: 18),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.danger,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                          ),
+                          label: const Text("Delete"),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 if (_saving)
                   const Padding(
                     padding: EdgeInsets.only(top: 16),

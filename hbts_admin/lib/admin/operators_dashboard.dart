@@ -62,6 +62,34 @@ class _OperatorsDashboardState extends State<OperatorsDashboard> {
     return int.tryParse(raw?.toString() ?? "");
   }
 
+  String _companyLabel(Map<String, dynamic> op) {
+    final direct = op["company"] ?? op["company_name"] ?? op["operator_name"];
+    final directText = direct?.toString().trim();
+    if (directText != null && directText.isNotEmpty && directText != "-") {
+      return directText;
+    }
+
+    final companyId = _toInt(
+      op["operator_id"] ?? op["company_id"] ?? op["companyId"],
+    );
+    if (companyId != null) {
+      final match = _companies.cast<Map<String, dynamic>>().firstWhere(
+            (c) =>
+                _toInt(c["operator_id"] ?? c["company_id"] ?? c["id"]) ==
+                companyId,
+            orElse: () => {},
+          );
+      final name =
+          match["name"] ?? match["company"] ?? match["operator_name"];
+      final nameText = name?.toString().trim();
+      if (nameText != null && nameText.isNotEmpty && nameText != "-") {
+        return nameText;
+      }
+    }
+
+    return "Unknown";
+  }
+
   Future<void> _loadCompanies() async {
     try {
       final data = await AdminApi.getCompanies();
@@ -144,24 +172,7 @@ class _OperatorsDashboardState extends State<OperatorsDashboard> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Operators"),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-            child: ElevatedButton.icon(
-              onPressed: _openAddRecord,
-              icon: const Icon(Icons.person_add_alt_1),
-              label: const Text("Add Operator"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-        ],
+        actions: const [],
       ),
       body: Column(
         children: [
@@ -267,6 +278,9 @@ class _OperatorsDashboardState extends State<OperatorsDashboard> {
                     itemBuilder: (context, index) {
                       final op = _operators[index];
                       final operatorId = _operatorId(op);
+                      final companyId = _toInt(
+                        op["operator_id"] ?? op["company_id"] ?? op["companyId"],
+                      );
 
                       return Card(
                         child: ListTile(
@@ -280,7 +294,7 @@ class _OperatorsDashboardState extends State<OperatorsDashboard> {
                           ),
                           title: Text(_safe(op["name"])),
                           subtitle: Text(
-                            "Email: ${_safe(op["email"])}\nPhone: ${_safe(op["phone"])}\nCompany: ${_safe(op["company"])}\nCompany ID: ${_safe(op["operator_id"])}\nUser ID: ${operatorId ?? "-"}",
+                            "Email: ${_safe(op["email"])}\nPhone: ${_safe(op["phone"])}\nCompany: ${_companyLabel(op)}\nCompany ID: ${companyId ?? "-"}\nUser ID: ${operatorId ?? "-"}",
                           ),
                           trailing: Wrap(
                             spacing: 8,

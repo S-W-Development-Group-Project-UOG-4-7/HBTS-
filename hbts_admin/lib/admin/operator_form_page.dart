@@ -219,24 +219,25 @@ class _OperatorFormPageState extends State<OperatorFormPage> {
                   validator: isEdit ? null : _required,
                 ),
                 const SizedBox(height: 18),
-                ElevatedButton.icon(
-                  onPressed: isEdit ? _updateRecord : _addRecord,
-                  icon: const Icon(Icons.save_outlined),
-                  label: Text(isEdit ? "Update Operator" : "Add Operator"),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: SizedBox(
+                    height: 40,
+                    child: ElevatedButton.icon(
+                      onPressed: isEdit ? _updateRecord : _addRecord,
+                      icon: const Icon(Icons.save_outlined, size: 18),
+                      label: Text(isEdit ? "Update Operator" : "Add Operator"),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                      ),
+                    ),
+                  ),
                 ),
                 if (_saving)
                   const Padding(
                     padding: EdgeInsets.only(top: 16),
                     child: Center(child: CircularProgressIndicator()),
                   ),
-                const SizedBox(height: 8),
-                Text(
-                  "Operators are created in users with role_id = 5.",
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: AppColors.textMuted),
-                ),
               ],
             ),
           ),

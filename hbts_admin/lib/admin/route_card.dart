@@ -34,11 +34,24 @@ class RouteCard extends StatelessWidget {
       ["destination", "end_point", "end", "to_location", "to"],
       fallback: "-",
     );
-    final distance = _pickString(["distance_km", "distance"], fallback: "-");
-    final fare = _pickString(["fare", "price"], fallback: "-");
-    final status = _pickString(["status", "route_status"], fallback: "unknown");
-    final createdAt = _formatDate(route["created_at"]);
-    final updatedAt = _formatDate(route["updated_at"]);
+    final distance = _pickString(
+      ["distance_km", "distance", "distanceKm", "route_distance"],
+      fallback: "-",
+    );
+    final fare = _pickString(
+      ["fare", "price", "fare_amount", "route_fare", "route_price"],
+      fallback: "-",
+    );
+    final status = _pickString(
+      ["status", "route_status", "routeStatus"],
+      fallback: "-",
+    );
+    final createdAt = _formatDate(
+      route["created_at"] ?? route["createdAt"] ?? route["createdat"],
+    );
+    final updatedAt = _formatDate(
+      route["updated_at"] ?? route["updatedAt"] ?? route["updatedat"],
+    );
 
     return Card(
       elevation: 3,
@@ -86,10 +99,11 @@ class RouteCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  _Badge(
-                    text: status,
-                    color: _statusColor(status),
-                  ),
+                  if (status != "-")
+                    _Badge(
+                      text: status,
+                      color: _statusColor(status),
+                    ),
                 ],
               ),
               const SizedBox(height: 12),
