@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../app_routes.dart';
-import '../../state/conductor_store.dart';
+import '../app_routes.dart';
+import '../state/conductor_store.dart';
 
 class ConductorHomePage extends StatefulWidget {
   const ConductorHomePage({super.key});
@@ -193,15 +193,15 @@ class _ConductorHomePageState extends State<ConductorHomePage> {
           SizedBox(
             width: double.infinity,
             height: 46,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-              onPressed: () => Navigator.pushNamed(context, AppRoutes.conductorActiveTrip!),
-              child: const Text("View Active Trip", style: TextStyle(fontWeight: FontWeight.w900)),
-            ),
+child: ElevatedButton(
+  style: ElevatedButton.styleFrom(
+    backgroundColor: _primary,
+    foregroundColor: Colors.white,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+  ),
+  onPressed: () => Navigator.pushNamed(context, AppRoutes.conductorActiveTrip ?? ''),
+  child: const Text("View Active Trip", style: TextStyle(fontWeight: FontWeight.w900)),
+),
           ),
         ],
       ),
@@ -258,9 +258,9 @@ class _ConductorHomePageState extends State<ConductorHomePage> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
               onPressed: () {
-                if (isRunning) {
-                  Navigator.pushNamed(context, AppRoutes.conductorActiveTrip!);
-                } else {
+if (isRunning) {
+  Navigator.pushNamed(context, AppRoutes.conductorActiveTrip ?? '');
+} else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text("Trip is ${_statusLabel(status)} (details later)")),
                   );

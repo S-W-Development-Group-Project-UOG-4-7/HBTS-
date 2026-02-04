@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../app_routes.dart';
+import '../app_routes.dart' as routes;
 import '../state/conductor_store.dart';
 import '../services/conductor_api.dart';
 import '../models/conductor_booking_model.dart';
@@ -237,11 +237,11 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage>
               final tripId = context.read<ConductorStore>().activeTrip?.tripId;
               if (tripId == null) return;
 
-              Navigator.pushNamed(
-                context,
-                AppRoutes.conductorBookings!,
-                arguments: {"tripId": tripId},
-              );
+Navigator.pushNamed(
+  context,
+  routes.AppRoutes.conductorBookings ?? '',
+  arguments: {"tripId": tripId},
+);
             },
             icon: const Icon(Icons.list_alt_rounded),
           ),
@@ -661,9 +661,9 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage>
               onPressed: () {
                 Navigator.pop(context); // close dialog
                 // ✅ manual exit only
-                Navigator.popUntil(context, (r) => r.isFirst);
-                Navigator.pushReplacementNamed(context, AppRoutes.conductorHome!);
-              },
+  Navigator.popUntil(context, (r) => r.isFirst);
+  Navigator.pushReplacementNamed(context, routes.AppRoutes.conductorHome ?? '');
+},
               child: const Text("Close Trip", style: TextStyle(fontWeight: FontWeight.w900)),
             ),
           ],

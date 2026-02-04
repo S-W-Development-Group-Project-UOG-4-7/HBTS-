@@ -11,6 +11,7 @@ class OperatorBusStatsPage extends StatefulWidget {
 class _OperatorBusStatsPageState extends State<OperatorBusStatsPage> {
   late Future<List<Map<String, dynamic>>> _statsFuture;
   late DateTimeRange _range;
+  String? _selectedBusId;
 
   @override
   void initState() {
@@ -40,6 +41,15 @@ class _OperatorBusStatsPageState extends State<OperatorBusStatsPage> {
   }
 
   String _safeStr(dynamic v) => (v == null) ? "-" : v.toString();
+
+  String _busLabel(Map<String, dynamic> bus) {
+    final busId = _safeStr(bus["bus_id"]);
+    final plate = _safeStr(bus["license_plate_no"]);
+    if (plate == "-" || plate.isEmpty) {
+      return "Bus $busId";
+    }
+    return "Bus $busId - $plate";
+  }
 
   Future<void> _pickRange() async {
     final now = DateTime.now();
@@ -89,19 +99,96 @@ class _OperatorBusStatsPageState extends State<OperatorBusStatsPage> {
               ),
               child: Padding(
                 padding: const EdgeInsets.all(14),
-                child: Row(
+                child: Column(
                   children: [
-                    Icon(Icons.date_range, color: Colors.blue.shade700),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        "Date range: ${_rangeLabel()}",
-                        style: TextStyle(color: Colors.grey.shade700),
-                      ),
+                    Row(
+                      children: [
+                        Icon(Icons.date_range, color: Colors.blue.shade700),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            "Date range: ${_rangeLabel()}",
+                            style: TextStyle(color: Colors.grey.shade700),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _pickRange,
+                          child: const Text("Pick Range"),
+                        ),
+                      ],
                     ),
-                    TextButton(
-                      onPressed: _pickRange,
-                      child: const Text("Pick Range"),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Icon(Icons.directions_bus, color: Colors.blue.shade700),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: FutureBuilder<List<Map<String, dynamic>>>(
+                            future: _statsFuture,
+                            builder: (context, snapshot) {
+                              final allBuses = snapshot.data ?? [];
+                              final options = allBuses
+                                  .map((b) => _safeStr(b["bus_id"]))
+                                  .where((id) => id != "-")
+                                  .toSet()
+                                  .toList()
+                                ..sort((a, b) => a.compareTo(b));
+
+                              if (_selectedBusId != null && !options.contains(_selectedBusId)) {
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  if (!mounted) return;
+                                  setState(() {
+                                    _selectedBusId = null;
+                                  });
+                                });
+                              }
+
+                              return DropdownButtonFormField<String>(
+                                value: _selectedBusId,
+                                isExpanded: true,
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(color: Colors.blue.shade100),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(color: Colors.blue.shade100),
+                                  ),
+                                ),
+                                hint: const Text("All buses"),
+                                items: [
+                                  const DropdownMenuItem<String>(
+                                    value: null,
+                                    child: Text("All buses"),
+                                  ),
+                                  ...options.map(
+                                    (id) => DropdownMenuItem<String>(
+                                      value: id,
+                                      child: Text(
+                                        _busLabel(
+                                          allBuses.firstWhere(
+                                            (b) => _safeStr(b["bus_id"]) == id,
+                                            orElse: () => {"bus_id": id},
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedBusId = value;
+                                  });
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -125,18 +212,24 @@ class _OperatorBusStatsPageState extends State<OperatorBusStatsPage> {
                   }
 
                   final allBuses = snapshot.data ?? [];
-                  final scheduled = allBuses
-                      .where((bus) => _asInt(bus["trip_count"]) > 0)
-                      .toList();
+                  final scheduled = allBuses.where((bus) => _asInt(bus["trip_count"]) > 0).toList();
+                  final filtered = _selectedBusId == null
+                      ? scheduled
+                      : allBuses
+                          .where((bus) => _safeStr(bus["bus_id"]) == _selectedBusId)
+                          .toList();
 
-                  if (scheduled.isEmpty) {
-                    return const Center(child: Text("No buses scheduled for this range."));
+                  if (filtered.isEmpty) {
+                    final message = _selectedBusId == null
+                        ? "No buses scheduled for this range."
+                        : "No data for the selected bus in this range.";
+                    return Center(child: Text(message));
                   }
 
                   return ListView.builder(
-                    itemCount: scheduled.length,
+                    itemCount: filtered.length,
                     itemBuilder: (context, index) {
-                      final bus = scheduled[index];
+                      final bus = filtered[index];
                       final busId = _safeStr(bus["bus_id"]);
                       final plate = _safeStr(bus["license_plate_no"]);
                       final model = _safeStr(bus["model"]);

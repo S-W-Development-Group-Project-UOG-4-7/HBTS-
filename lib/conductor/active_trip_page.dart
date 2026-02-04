@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../app_routes.dart';
-import '../../state/conductor_store.dart';
+import '../app_routes.dart' as routes;
+import '../state/conductor_store.dart';
 
 class ConductorActiveTripPage extends StatefulWidget {
   const ConductorActiveTripPage({super.key});
@@ -97,7 +97,7 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage> {
                             minimumSize: const Size.fromHeight(52),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           ),
-                          onPressed: () => Navigator.pushNamed(context, AppRoutes.conductorScan ?? '/'),
+onPressed: () => Navigator.pushNamed(context, routes.AppRoutes.conductorScan ?? ''),
                           icon: const Icon(Icons.qr_code_scanner_rounded),
                           label: const Text("Scan QR", style: TextStyle(fontWeight: FontWeight.w900)),
                         ),
@@ -182,7 +182,7 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage> {
     return _card(
       padding: 14,
       child: InkWell(
-        onTap: () => Navigator.pushNamed(context, AppRoutes.conductorBookingDetails ?? '/', arguments: {"booking": b}),
+onTap: () => Navigator.pushNamed(context, routes.AppRoutes.conductorBookingDetails ?? '', arguments: {"booking": b} as Object),
         child: Row(
           children: [
             Container(

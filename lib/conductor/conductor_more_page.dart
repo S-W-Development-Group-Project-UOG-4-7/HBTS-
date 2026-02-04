@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../services/token_store.dart';
-import '../../app_routes.dart';
+import '../services/token_store.dart';
+import '../app_routes.dart';
 
 class ConductorMorePage extends StatelessWidget {
   const ConductorMorePage({super.key});

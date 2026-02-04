@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import '../../../config.dart';
 import 'utils/operator_session.dart'; // ✅ correct for your folder structure
-
 
 class OperatorApi {
   static Uri _uri(String path) => Uri.parse("${AppConfig.baseUrl}/api$path");
@@ -14,24 +16,132 @@ class OperatorApi {
         "Accept": "application/json",
       };
 
+  static Map<String, String> _authHeaders({bool json = true}) {
+    final token = OperatorSession.token;
+    final headers = <String, String>{
+      "Accept": "application/json",
+      if (json) "Content-Type": "application/json",
+    };
+    if (token == null || token.isEmpty) return headers;
+    return {
+      ...headers,
+      "Authorization": "Bearer $token",
+    };
+  }
+
+  static String _normalizeImageName(String? name, {String fallback = "image.jpg"}) {
+    final raw = (name ?? "").trim();
+    if (raw.isEmpty) return fallback;
+    if (raw.contains(".")) return raw;
+    return "$raw.jpg";
+  }
+
+  static MediaType _imageMediaType(String? filename) {
+    final lower = (filename ?? "").toLowerCase();
+    if (lower.endsWith(".png")) return MediaType("image", "png");
+    if (lower.endsWith(".webp")) return MediaType("image", "webp");
+    return MediaType("image", "jpeg");
+  }
+
+  static Future<http.Response> _sendMultipart({
+    required Uri url,
+    required Map<String, String> fields,
+    required List<http.MultipartFile> files,
+  }) async {
+    final request = http.MultipartRequest("POST", url);
+    request.headers.addAll(_authHeaders(json: false));
+    request.fields.addAll(fields);
+    request.files.addAll(files);
+    final streamed = await request.send().timeout(const Duration(seconds: 15));
+    return http.Response.fromStream(streamed);
+  }
+
+  static List<Uri> _candidateLoginUrls() {
+    final seen = <String>{};
+    final candidates = <Uri>[];
+    final base = Uri.parse(AppConfig.baseUrl);
+    final scheme = base.scheme.isNotEmpty ? base.scheme : "http";
+
+    void add(Uri uri) {
+      final key = uri.origin;
+      if (seen.add(key)) {
+        candidates.add(uri.replace(path: "/api/operator/login"));
+      }
+    }
+
+    if (base.host.isNotEmpty && base.hasPort) {
+      add(base);
+    }
+
+    final hosts = <String>{
+      if (base.host.isNotEmpty) base.host,
+      "127.0.0.1",
+      "localhost",
+    };
+
+    final ports = <int>{
+      if (base.hasPort) base.port,
+      if (!base.hasPort || base.port == 4000) 8000,
+      4000,
+    };
+
+    for (final host in hosts) {
+      for (final port in ports) {
+        add(Uri(scheme: scheme, host: host, port: port));
+      }
+    }
+
+    return candidates;
+  }
+
   // ---------- AUTH ----------
   static Future<Map<String, dynamic>> login({
     required String email,
     required String password,
   }) async {
-    final url = _uri("/operator/login"); // keep your endpoint
+    final body = jsonEncode({
+      "email": email.trim(),
+      "password": password,
+    });
 
-    final res = await http.post(
-      url,
-      headers: _jsonHeaders(),
-      body: jsonEncode({
-        "email": email.trim(),
-        "password": password,
-      }),
-    );
+    http.Response? res;
+    Object? lastError;
 
-    if (res.statusCode != 200) {
-      throw Exception("Login failed (${res.statusCode}): ${_body(res)}");
+    for (final url in _candidateLoginUrls()) {
+      try {
+        final attempt = await http
+            .post(url, headers: _jsonHeaders(), body: body)
+            .timeout(const Duration(seconds: 8));
+
+        if (attempt.statusCode == 200) {
+          res = attempt;
+          AppConfig.setRuntimeBaseUrl(url.origin);
+          break;
+        }
+
+        if (attempt.statusCode == 400 ||
+            attempt.statusCode == 401 ||
+            attempt.statusCode == 403 ||
+            attempt.statusCode >= 500) {
+          throw Exception("Login failed (${attempt.statusCode}): ${_body(attempt)}");
+        }
+
+        lastError =
+            Exception("Unexpected response (${attempt.statusCode}) from ${url.origin}");
+      } on TimeoutException catch (e) {
+        lastError = e;
+      } on http.ClientException catch (e) {
+        lastError = e;
+      }
+    }
+
+    if (res == null) {
+      if (lastError != null) {
+        throw Exception(
+          "Cannot reach operator login service. ${lastError.toString()}",
+        );
+      }
+      throw Exception("Cannot reach operator login service.");
     }
 
     final decoded = jsonDecode(_body(res));
@@ -60,6 +170,7 @@ class OperatorApi {
     OperatorSession.operatorId = int.tryParse(idStr ?? "");
 
     OperatorSession.operatorName = operator["name"]?.toString();
+    OperatorSession.operatorEmail = operator["email"]?.toString();
 
     if (OperatorSession.operatorId == null) {
       throw Exception('Invalid operator id from backend: ${operator["id"]}');
@@ -135,6 +246,40 @@ class OperatorApi {
     }).toList();
   }
 
+  // ---------- TRIP BOOKINGS ----------
+  static Future<List<Map<String, dynamic>>> fetchTripBookings({
+    required int tripId,
+  }) async {
+    final url = _uri("/operator/trips/$tripId/bookings");
+
+    final res = await http.get(
+      url,
+      headers: _authHeaders(),
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception("Failed to load trip bookings (${res.statusCode}): ${_body(res)}");
+    }
+
+    final decoded = jsonDecode(_body(res));
+
+    List<dynamic> list;
+    if (decoded is List) {
+      list = decoded;
+    } else if (decoded is Map && decoded["items"] is List) {
+      list = decoded["items"] as List;
+    } else if (decoded is Map && decoded["bookings"] is List) {
+      list = decoded["bookings"] as List;
+    } else {
+      throw Exception("Unexpected trip bookings response shape: $decoded");
+    }
+
+    return list.map((e) {
+      if (e is Map) return Map<String, dynamic>.from(e);
+      throw Exception("Booking item is not a JSON object: $e");
+    }).toList();
+  }
+
   // ---------- BUSES ----------
   static Future<List<Map<String, dynamic>>> fetchBuses() async {
     final url = _uri("/operator/buses");
@@ -198,20 +343,150 @@ class OperatorApi {
     required String name,
     required String phone,
     String? licenseNo,
+    String? email,
+    String? idNumber,
+    Uint8List? profileImageBytes,
+    String? profileImageName,
+    Uint8List? idCardImageBytes,
+    String? idCardImageName,
   }) async {
     final url = _uri("/operator/drivers");
-    final res = await http.post(
-      url,
-      headers: _authHeaders(),
-      body: jsonEncode({
-        "name": name,
-        "phone": phone,
-        "licenseNo": licenseNo,
-      }),
-    );
+    final trimmedName = name.trim();
+    final trimmedPhone = phone.trim();
+    final trimmedEmail = email?.trim();
+    final trimmedId = idNumber?.trim();
+    final trimmedLicense = licenseNo?.trim();
+
+    final hasFiles = profileImageBytes != null || idCardImageBytes != null;
+
+    final res = hasFiles
+        ? await _sendMultipart(
+            url: url,
+            fields: {
+              "name": trimmedName,
+              "phone": trimmedPhone,
+              if (trimmedEmail != null && trimmedEmail.isNotEmpty) "email": trimmedEmail,
+              if (trimmedId != null && trimmedId.isNotEmpty) "idNumber": trimmedId,
+              if (trimmedLicense != null && trimmedLicense.isNotEmpty)
+                "licenseNo": trimmedLicense,
+            },
+            files: [
+              if (profileImageBytes != null)
+                http.MultipartFile.fromBytes(
+                  "profile",
+                  profileImageBytes,
+                  filename: _normalizeImageName(profileImageName, fallback: "profile.jpg"),
+                  contentType: _imageMediaType(profileImageName),
+                ),
+              if (idCardImageBytes != null)
+                http.MultipartFile.fromBytes(
+                  "idCard",
+                  idCardImageBytes,
+                  filename: _normalizeImageName(idCardImageName, fallback: "id_card.jpg"),
+                  contentType: _imageMediaType(idCardImageName),
+                ),
+            ],
+          )
+        : await http.post(
+            url,
+            headers: _authHeaders(),
+            body: jsonEncode({
+              "name": trimmedName,
+              "phone": trimmedPhone,
+              "email": trimmedEmail,
+              "idNumber": trimmedId,
+              "licenseNo": trimmedLicense,
+            }),
+          );
 
     if (res.statusCode != 201 && res.statusCode != 200) {
       throw Exception("Failed to create driver (${res.statusCode}): ${_body(res)}");
+    }
+
+    return Map<String, dynamic>.from(jsonDecode(_body(res)) as Map);
+  }
+
+  // ---------- CONDUCTORS ----------
+  static Future<List<Map<String, dynamic>>> fetchConductors() async {
+    final url = _uri("/operator/conductors");
+    final res = await http.get(url, headers: _authHeaders());
+
+    if (res.statusCode != 200) {
+      throw Exception(
+        "Failed to load conductors (${res.statusCode}): ${_body(res)}",
+      );
+    }
+
+    final decoded = jsonDecode(_body(res));
+    if (decoded is! List) {
+      throw Exception("Conductors response is not a list: $decoded");
+    }
+
+    return decoded.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  static Future<Map<String, dynamic>> createConductor({
+    required String name,
+    required String phone,
+    required String email,
+    required String idNumber,
+    required int busId,
+    Uint8List? profileImageBytes,
+    String? profileImageName,
+    Uint8List? idCardImageBytes,
+    String? idCardImageName,
+  }) async {
+    final url = _uri("/operator/conductors");
+    final trimmedName = name.trim();
+    final trimmedPhone = phone.trim();
+    final trimmedEmail = email.trim();
+    final trimmedId = idNumber.trim();
+
+    final hasFiles = profileImageBytes != null || idCardImageBytes != null;
+
+    final res = hasFiles
+        ? await _sendMultipart(
+            url: url,
+            fields: {
+              "name": trimmedName,
+              "phone": trimmedPhone,
+              "email": trimmedEmail,
+              "idNumber": trimmedId,
+              "busId": busId.toString(),
+            },
+            files: [
+              if (profileImageBytes != null)
+                http.MultipartFile.fromBytes(
+                  "profile",
+                  profileImageBytes,
+                  filename: _normalizeImageName(profileImageName, fallback: "profile.jpg"),
+                  contentType: _imageMediaType(profileImageName),
+                ),
+              if (idCardImageBytes != null)
+                http.MultipartFile.fromBytes(
+                  "idCard",
+                  idCardImageBytes,
+                  filename: _normalizeImageName(idCardImageName, fallback: "id_card.jpg"),
+                  contentType: _imageMediaType(idCardImageName),
+                ),
+            ],
+          )
+        : await http.post(
+            url,
+            headers: _authHeaders(),
+            body: jsonEncode({
+              "name": trimmedName,
+              "phone": trimmedPhone,
+              "email": trimmedEmail,
+              "idNumber": trimmedId,
+              "busId": busId,
+            }),
+          );
+
+    if (res.statusCode != 201 && res.statusCode != 200) {
+      throw Exception(
+        "Failed to create conductor (${res.statusCode}): ${_body(res)}",
+      );
     }
 
     return Map<String, dynamic>.from(jsonDecode(_body(res)) as Map);
@@ -389,17 +664,6 @@ class OperatorApi {
       if (e is Map) return Map<String, dynamic>.from(e);
       throw Exception("Bus booking item is not a JSON object: $e");
     }).toList();
-  }
-
-  static Map<String, String> _authHeaders() {
-    final token = OperatorSession.token;
-    if (token == null || token.isEmpty) {
-      return _jsonHeaders();
-    }
-    return {
-      ..._jsonHeaders(),
-      "Authorization": "Bearer $token",
-    };
   }
 
   static String _dateParam(DateTime date) {

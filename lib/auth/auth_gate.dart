@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/token_store.dart';
-import '../app_routes.dart';
+import '../app_routes.dart' as routes;
 
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
@@ -24,7 +24,7 @@ class _AuthGateState extends State<AuthGate> {
   if (!loggedIn) {
     Navigator.pushNamedAndRemoveUntil(
       context,
-      AppRoutes.login,
+      routes.AppRoutes.login,
       (_) => false,
     );
     return;
@@ -35,30 +35,40 @@ class _AuthGateState extends State<AuthGate> {
 
   if (!mounted) return;
 
-  if (role == "conductor") {
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      AppRoutes.conductorHome!,
-      (_) => false,
-    );
-    return;
-  }
-
-  if (role == "admin") {
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      AppRoutes.adminHome,
-      (_) => false,
-    );
-    return;
-  }
-
-  // You can add operator/driver here later if needed
+if (role == null) {
   Navigator.pushNamedAndRemoveUntil(
     context,
-    AppRoutes.home,
+    routes.AppRoutes.login,
     (_) => false,
   );
+  return;
+}
+
+  final String roleValue = role;
+  switch (roleValue) {
+    case "conductor":
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        routes.AppRoutes.conductorHome!,
+        (_) => false,
+      );
+      return;
+    case "admin":
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        routes.AppRoutes.adminHome!,
+        (_) => false,
+      );
+      return;
+    default:
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          routes.AppRoutes.home,
+          (_) => false,
+        );
+      }
+  }
 }
 
   @override

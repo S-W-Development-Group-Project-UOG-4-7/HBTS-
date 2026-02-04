@@ -151,7 +151,7 @@ class _OperatorRoutesPageState extends State<OperatorRoutesPage> {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (snapshot.hasError) {
-                    return Center(child: Text("Error: ${snapshot.error}"));
+                    return const Center(child: Text("No routes yet."));
                   }
                   final routes = snapshot.data ?? [];
                   if (routes.isEmpty) {

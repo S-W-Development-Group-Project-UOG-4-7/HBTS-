@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../services/token_store.dart';
 import '../services/user_api.dart';
 import '../models/user_model.dart';
-import '../app_routes.dart';
+import '../app_routes.dart' as routes;
 import '../state/notification_store.dart';
 import '../api/booking_api.dart';
 import '../models/my_booking_item.dart';
@@ -116,7 +116,7 @@ class _HomePageState extends State<HomePage> {
 
   void _goLogin() {
     if (!mounted) return;
-    Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+    Navigator.pushNamedAndRemoveUntil(context, routes.AppRoutes.login, (_) => false);
   }
 
   Future<void> _logout() async {
@@ -130,8 +130,8 @@ class _HomePageState extends State<HomePage> {
 
     Navigator.pushNamed(
       context,
-      AppRoutes.profile,
-      arguments: ProfileArgs(
+      routes.AppRoutes.profile,
+      arguments: routes.ProfileArgs(
         id: u.id,
         name: u.name,
         email: u.email,
@@ -144,18 +144,20 @@ class _HomePageState extends State<HomePage> {
   // -------------------------
   // Navigation targets (routes you already have)
   // -------------------------
-  void _goReserve() => Navigator.pushNamed(context, AppRoutes.schedule);
-  void _goBookings() => Navigator.pushNamed(context, AppRoutes.myBookings);
+  void _goReserve() => Navigator.pushNamed(context, routes.AppRoutes.schedule);
+  void _goBookings() => Navigator.pushNamed(context, routes.AppRoutes.myBookings);
 
   // This should become your "Upcoming Schedules (today)" page later.
   // For now it can go to myBookings so you don't break anything.
-  void _goUpcomingSchedules() {
-    final route = AppRoutes.upcomingToday ?? AppRoutes.myBookings;
+void _goUpcomingSchedules() {
+  final route = routes.AppRoutes.upcomingToday;
+  if (route != null) {
     Navigator.pushNamed(context, route);
   }
+}
 
-  void _goTrackBooking() => Navigator.pushNamed(context, AppRoutes.trackMyBooking);
-  void _goTrackBus() => Navigator.pushNamed(context, AppRoutes.trackBus);
+  void _goTrackBooking() => Navigator.pushNamed(context, routes.AppRoutes.trackMyBooking);
+  void _goTrackBus() => Navigator.pushNamed(context, routes.AppRoutes.trackBus);
 
   // Nearest trip card → booking details
   // Wire args later using your existing logic/models.
@@ -254,7 +256,7 @@ class _HomePageState extends State<HomePage> {
             userName: user.name,
             photoUrl: user.profileImage,
             onNotifications: () {
-              Navigator.pushNamed(context, AppRoutes.notifications);
+              Navigator.pushNamed(context, routes.AppRoutes.notifications);
             },
             onProfile: _openProfile,
             onLogout: _logout,

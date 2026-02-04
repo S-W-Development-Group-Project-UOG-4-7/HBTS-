@@ -53,6 +53,9 @@ class _ConductorScanPageState extends State<ConductorScanPage> {
     if (_lastQr == clean) return;
     _lastQr = clean;
 
+    final store = context.read<ConductorStore>();
+    final activeTripId = store.activeTrip?.tripId;
+
     setState(() => _busy = true);
 
     // pause scanning while verifying
@@ -60,9 +63,6 @@ class _ConductorScanPageState extends State<ConductorScanPage> {
     if (!mounted) return;
 
     try {
-      final store = context.read<ConductorStore>();
-      final activeTripId = store.activeTrip?.tripId;
-
       final res = await ConductorApi.scanVerify(
         qr: clean,
         tripId: activeTripId, // optional but recommended

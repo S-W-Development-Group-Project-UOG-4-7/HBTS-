@@ -9,7 +9,10 @@ import {
   endTrip,
   cancelTrip,
 } from "../controllers/trip.controller.js";
+<<<<<<< HEAD
+=======
 
+>>>>>>> origin/develop
 import { requireAuth } from "../middleware/auth.middleware.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -24,10 +27,17 @@ router.get("/:id", getTripById);
 // /api/trips/:id/seats
 router.get("/:id/seats", getTripSeats);
 
+<<<<<<< HEAD
+// /api/trips/:id/location
+router.post("/:id/location", requireAuth, pushTripLocation);
+
+// Staff actions
+=======
 // Location updates (driver/operator/admin)
 router.post("/:id/location", requireAuth, pushTripLocation);
 
 // Trip state transitions
+>>>>>>> origin/develop
 router.post("/:id/start", requireAuth, requireRole(["driver", "admin", "operator"]), startTrip);
 router.post("/:id/end", requireAuth, requireRole(["driver", "admin", "operator"]), endTrip);
 router.post("/:id/cancel", requireAuth, requireRole(["driver", "admin", "operator"]), cancelTrip);

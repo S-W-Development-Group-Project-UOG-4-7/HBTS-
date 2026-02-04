@@ -77,6 +77,26 @@ async function ensureDriverImageColumns() {
   }
 }
 
+async function ensureDriverMetaColumns() {
+  const columns = await getColumns("drivers");
+  const pending = [];
+
+  if (!columns.has("email")) {
+    pending.push("ALTER TABLE drivers ADD COLUMN IF NOT EXISTS email TEXT");
+  }
+  if (!columns.has("id_number")) {
+    pending.push("ALTER TABLE drivers ADD COLUMN IF NOT EXISTS id_number TEXT");
+  }
+
+  for (const stmt of pending) {
+    await pool.query(stmt);
+  }
+
+  if (pending.length) {
+    delete COLUMN_CACHE.drivers;
+  }
+}
+
 function cleanupFiles(files) {
   if (!files) return;
   const list = Array.isArray(files) ? files : [files];
@@ -115,10 +135,19 @@ router.use(operatorAuth);
 
 router.get("/", async (req, res) => {
   try {
+    const columns = await getColumns("drivers");
+    const nameColumn = columns.has("name")
+      ? "name"
+      : columns.has("drivername")
+        ? "drivername"
+        : null;
+    const select =
+      nameColumn && nameColumn !== "name" ? `d.*, d.${nameColumn} AS name` : "d.*";
+
     const { rows } = await pool.query(
       `
-      SELECT *
-      FROM drivers
+      SELECT ${select}
+      FROM drivers d
       WHERE operator_id = $1
       ORDER BY driver_id DESC
       `,
@@ -140,10 +169,40 @@ router.post(
   ]),
   async (req, res) => {
   try {
-    const { name, phone, licenseNo, license_no, status = "active" } = req.body || {};
+    const {
+      name,
+      phone,
+      email,
+      idNumber,
+      id_number,
+      licenseNo,
+      license_no,
+      status = "active",
+    } = req.body || {};
 
     if (!name || !phone) {
       return res.status(400).json({ message: "name and phone are required" });
+    }
+
+    const columnsInDb = await getColumns("drivers");
+    const nameColumn = columnsInDb.has("name")
+      ? "name"
+      : columnsInDb.has("drivername")
+        ? "drivername"
+        : null;
+
+    if (!nameColumn) {
+      return res.status(500).json({ message: "drivers table missing name column" });
+    }
+
+    const resolvedLicense = licenseNo || license_no;
+    const licenseValue =
+      resolvedLicense && String(resolvedLicense).trim() !== ""
+        ? String(resolvedLicense).trim()
+        : null;
+
+    if (columnsInDb.has("license_no") && !licenseValue) {
+      return res.status(400).json({ message: "licenseNo is required" });
     }
 
     const files = req.files || {};
@@ -154,11 +213,18 @@ router.post(
     if (profileFile || licenseFile || idFile) {
       await ensureDriverImageColumns();
     }
+    if (email || idNumber || id_number) {
+      await ensureDriverMetaColumns();
+    }
 
     const { columns, values } = await buildInsert("drivers", {
-      name: name.trim(),
+      [nameColumn]: name.trim(),
       phone: phone.trim(),
-      license_no: licenseNo || license_no || null,
+      // Prevent default user_id collisions when registering drivers from operator UI.
+      user_id: null,
+      email: email?.trim() ?? null,
+      id_number: idNumber || id_number || null,
+      license_no: licenseValue,
       profile_image_url: profileFile ? toPublicPath("drivers", profileFile.filename) : undefined,
       license_image_url: licenseFile ? toPublicPath("drivers", licenseFile.filename) : undefined,
       id_card_image_url: idFile ? toPublicPath("drivers", idFile.filename) : undefined,
@@ -185,6 +251,12 @@ router.post(
     return res.status(201).json(rows[0]);
   } catch (e) {
     cleanupFiles(Object.values(req.files || {}).flat());
+    if (e?.code === "23505") {
+      return res.status(409).json({
+        message: "Driver already exists (duplicate name or license number).",
+        error: e.message,
+      });
+    }
     return res.status(500).json({ message: "Failed to create driver", error: e.message });
   }
 });
@@ -201,9 +273,22 @@ router.put("/:driverId", async (req, res) => {
       return res.status(404).json({ message: "Driver not found" });
     }
 
+    const columnsInDb = await getColumns("drivers");
+    const nameColumn = columnsInDb.has("name")
+      ? "name"
+      : columnsInDb.has("drivername")
+        ? "drivername"
+        : null;
+
+    if (req.body?.email || req.body?.idNumber || req.body?.id_number) {
+      await ensureDriverMetaColumns();
+    }
+
     const { sets, values } = await buildUpdate("drivers", {
-      name: req.body?.name,
+      ...(nameColumn ? { [nameColumn]: req.body?.name } : {}),
       phone: req.body?.phone,
+      email: req.body?.email,
+      id_number: req.body?.idNumber || req.body?.id_number,
       license_no: req.body?.licenseNo || req.body?.license_no,
       status: req.body?.status,
     });

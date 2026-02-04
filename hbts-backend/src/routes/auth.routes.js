@@ -13,6 +13,15 @@ import { requireTempToken } from "../middleware/tempAuth.middleware.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
 import { getMe } from "../controllers/me.controller.js";
 
+<<<<<<< HEAD
+import {
+  login,
+  verifyLoginOtp,
+} from "../controllers/auth.controller.js";
+
+
+=======
+>>>>>>> origin/develop
 const router = Router();
 
 // Unified login

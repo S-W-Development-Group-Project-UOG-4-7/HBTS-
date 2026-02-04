@@ -29,7 +29,8 @@ class InAppNotificationBanner {
       _entry = null;
     }
 
-    final overlay = Overlay.of(context, rootOverlay: true);
+    final overlay = Overlay.maybeOf(context, rootOverlay: true);
+    if (overlay == null) return;
 
     late final OverlayEntry entry;
 
