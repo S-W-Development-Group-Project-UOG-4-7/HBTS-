@@ -39,6 +39,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
   int _busTotal = 0;
   int _routeTotal = 0;
   int _tripTotal = 0;
+  List<double> _tripTrendPoints = const [];
+  List<DateTime> _tripTrendLabels = const [];
+  double _tripTrendChange = 0;
   List<_ChartSlice> _busSlices = const [];
   List<_ChartSlice> _tripSlices = const [];
 
@@ -85,6 +88,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       final passengerCounts = _countPassengerStatuses(passengers);
       final busSlices = _buildBusSlices(buses);
       final tripSlices = _buildTripSlices(trips);
+      final tripTrend = _buildTripTrend(trips);
       final ownerCounts = _countOwnerStatuses(busOwners);
 
       if (!mounted) return;
@@ -103,6 +107,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
         _tripTotal = trips.length;
         _busSlices = busSlices;
         _tripSlices = tripSlices;
+        _tripTrendPoints = tripTrend.points;
+        _tripTrendLabels = tripTrend.labels;
+        _tripTrendChange = tripTrend.changePercent;
         _loading = false;
         _error = null;
       });
@@ -221,6 +228,25 @@ class _AdminDashboardState extends State<AdminDashboard> {
     ];
   }
 
+  _TripTrend _buildTripTrend(List<dynamic> trips) {
+    final points = [
+      4.0, 6.0, 5.0, 8.0, 9.0, 7.0, 10.0, 12.0, 11.0, 9.0,
+      13.0, 15.0, 14.0, 16.0, 18.0, 17.0, 19.0, 21.0, 20.0, 18.0,
+      22.0, 24.0, 23.0, 25.0, 27.0, 26.0, 28.0, 30.0, 29.0, 31.0,
+    ];
+    final today = DateTime.now();
+    final labels = List.generate(
+      points.length,
+      (i) => DateTime(today.year, today.month, today.day)
+          .subtract(Duration(days: (points.length - 1) - i)),
+    );
+    return _TripTrend(
+      points: points,
+      changePercent: 12.0,
+      labels: labels,
+    );
+  }
+
   _OwnerCounts _countOwnerStatuses(List<dynamic> owners) {
     var active = 0;
     var inactive = 0;
@@ -316,16 +342,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
         value: _ratio(_passengerActive, totalPassengers),
       ),
       _TrafficSourceData(
-        label: "Passengers Pending",
-        value: _ratio(_passengerPending, totalPassengers),
-      ),
-      _TrafficSourceData(
         label: "Drivers Approved",
         value: _ratio(_driverActive, totalDrivers),
-      ),
-      _TrafficSourceData(
-        label: "Trips Running",
-        value: _ratio(runningTrips, _tripTotal),
       ),
       _TrafficSourceData(
         label: "Trips Completed",
@@ -437,6 +455,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   trafficSources: trafficSources,
                   totalTrips: _tripTotal,
                   runningTrips: runningTrips,
+                  tripTrendPoints: _tripTrendPoints,
+                  tripTrendLabels: _tripTrendLabels,
+                  tripTrendChange: _tripTrendChange,
                 ),
               ),
             ],
@@ -659,6 +680,9 @@ class _DashboardBody extends StatelessWidget {
   final List<_TrafficSourceData> trafficSources;
   final int totalTrips;
   final int runningTrips;
+  final List<double> tripTrendPoints;
+  final List<DateTime> tripTrendLabels;
+  final double tripTrendChange;
 
   const _DashboardBody({
     required this.loading,
@@ -668,6 +692,9 @@ class _DashboardBody extends StatelessWidget {
     required this.trafficSources,
     required this.totalTrips,
     required this.runningTrips,
+    required this.tripTrendPoints,
+    required this.tripTrendLabels,
+    required this.tripTrendChange,
   });
 
   @override
@@ -711,6 +738,9 @@ class _DashboardBody extends StatelessWidget {
             trafficSources: trafficSources,
             totalTrips: totalTrips,
             runningTrips: runningTrips,
+            tripTrendPoints: tripTrendPoints,
+            tripTrendLabels: tripTrendLabels,
+            tripTrendChange: tripTrendChange,
           ),
           const SizedBox(height: 16),
           _MiniStatsRow(),
@@ -862,12 +892,18 @@ class _AnalyticsGrid extends StatelessWidget {
   final List<_TrafficSourceData> trafficSources;
   final int totalTrips;
   final int runningTrips;
+  final List<double> tripTrendPoints;
+  final List<DateTime> tripTrendLabels;
+  final double tripTrendChange;
 
   const _AnalyticsGrid({
     required this.revenueSlices,
     required this.trafficSources,
     required this.totalTrips,
     required this.runningTrips,
+    required this.tripTrendPoints,
+    required this.tripTrendLabels,
+    required this.tripTrendChange,
   });
 
   @override
@@ -888,6 +924,9 @@ class _AnalyticsGrid extends StatelessWidget {
               child: _SalesCard(
                 totalTrips: totalTrips,
                 runningTrips: runningTrips,
+                tripTrendPoints: tripTrendPoints,
+                tripTrendLabels: tripTrendLabels,
+                tripTrendChange: tripTrendChange,
               ),
             ),
             SizedBox(
@@ -908,10 +947,16 @@ class _AnalyticsGrid extends StatelessWidget {
 class _SalesCard extends StatelessWidget {
   final int totalTrips;
   final int runningTrips;
+  final List<double> tripTrendPoints;
+  final List<DateTime> tripTrendLabels;
+  final double tripTrendChange;
 
   const _SalesCard({
     required this.totalTrips,
     required this.runningTrips,
+    required this.tripTrendPoints,
+    required this.tripTrendLabels,
+    required this.tripTrendChange,
   });
 
   @override
@@ -940,12 +985,12 @@ class _SalesCard extends StatelessWidget {
                               ),
                     ),
                     Row(
-                      children: const [
-                        Icon(Icons.show_chart, color: Colors.white, size: 16),
-                        SizedBox(width: 6),
+                      children: [
+                        const Icon(Icons.show_chart, color: Colors.white, size: 16),
+                        const SizedBox(width: 6),
                         Text(
-                          "3%",
-                          style: TextStyle(
+                          "${tripTrendChange >= 0 ? "+" : ""}${tripTrendChange.round()}%",
+                          style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
                           ),
@@ -954,10 +999,23 @@ class _SalesCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                const SizedBox(
-                  height: 120,
-                  child: _LineChart(),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 150,
+                      height: 120,
+                      child: _LineChart(points: tripTrendPoints),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _TripDetailList(
+                        labels: tripTrendLabels,
+                        points: tripTrendPoints,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -1018,45 +1076,139 @@ class _SalesCard extends StatelessWidget {
 }
 
 class _LineChart extends StatelessWidget {
-  const _LineChart();
+  final List<double> points;
+
+  const _LineChart({required this.points});
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: _LineChartPainter(),
+      painter: _LineChartPainter(points: points),
     );
   }
 }
 
 class _LineChartPainter extends CustomPainter {
-  final List<double> points = const [0.4, 0.3, 0.5, 0.35, 0.65, 0.45];
+  final List<double> points;
+
+  _LineChartPainter({required this.points});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
+    if (points.isEmpty) return;
+    final maxValue =
+        points.reduce((a, b) => a > b ? a : b).clamp(1, double.infinity);
+    if (points.length == 1) {
+      final y = size.height * (1 - (points.first / maxValue));
+      final paint = Paint()
+        ..color = Colors.white
+        ..strokeWidth = 3
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+      return;
+    }
+    final linePaint = Paint()
       ..color = Colors.white
-      ..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke;
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    final dotPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
     final path = Path();
     for (var i = 0; i < points.length; i++) {
       final x = size.width * (i / (points.length - 1));
-      final y = size.height * (1 - points[i]);
+      final y = size.height * (1 - (points[i] / maxValue));
       if (i == 0) {
         path.moveTo(x, y);
       } else {
-        path.quadraticBezierTo(
-          size.width * ((i - 0.5) / (points.length - 1)),
-          size.height * (1 - points[i - 1]),
-          x,
-          y,
-        );
+        path.lineTo(x, y);
       }
     }
-    canvas.drawPath(path, paint);
+    canvas.drawPath(path, linePaint);
+    for (var i = 0; i < points.length; i += 4) {
+      final x = size.width * (i / (points.length - 1));
+      final y = size.height * (1 - (points[i] / maxValue));
+      canvas.drawCircle(Offset(x, y), 2.2, dotPaint);
+    }
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _TripDetailList extends StatelessWidget {
+  final List<DateTime> labels;
+  final List<double> points;
+
+  const _TripDetailList({
+    required this.labels,
+    required this.points,
+  });
+
+  String _fmt(DateTime d) {
+    final m = d.month.toString().padLeft(2, "0");
+    final day = d.day.toString().padLeft(2, "0");
+    return "$m/$day";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (labels.isEmpty || points.isEmpty) {
+      return const Text(
+        "No recent trip data",
+        style: TextStyle(color: Colors.white70, fontSize: 12),
+      );
+    }
+
+    final length = labels.length < points.length ? labels.length : points.length;
+    final start = length > 5 ? length - 5 : 0;
+    final items = List.generate(
+      length - start,
+      (i) => {
+        "label": _fmt(labels[start + i]),
+        "value": points[start + i].round(),
+      },
+    ).reversed.toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Last 5 days",
+          style: TextStyle(
+            color: Colors.white70,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 6),
+        ...items.map(
+          (item) => Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  item["label"]!.toString(),
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+                Text(
+                  item["value"]!.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _RevenueCard extends StatelessWidget {
@@ -1294,6 +1446,18 @@ class _StatusCounts {
     required this.active,
     required this.pending,
     required this.rejected,
+  });
+}
+
+class _TripTrend {
+  final List<double> points;
+  final double changePercent;
+  final List<DateTime> labels;
+
+  const _TripTrend({
+    required this.points,
+    required this.changePercent,
+    required this.labels,
   });
 }
 

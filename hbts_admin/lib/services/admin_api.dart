@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 import 'token_store.dart';
 import '../config.dart';
@@ -24,6 +26,76 @@ class AdminApi {
       "Authorization": "Bearer $token",
       "Content-Type": "application/json",
     };
+  }
+
+  static Future<Map<String, String>> _authOnlyHeaders() async {
+    final token = await TokenStore.getAccessToken();
+
+    if (token == null || token.isEmpty) {
+      throw Exception("Not authenticated. Please login again.");
+    }
+
+    return {
+      "Authorization": "Bearer $token",
+    };
+  }
+
+  static Future<Map<String, dynamic>> _sendMultipart(
+    String method,
+    Uri uri,
+    Map<String, dynamic> fields, {
+    Uint8List? idCardBytes,
+    String? idCardFilename,
+  }) async {
+    final request = http.MultipartRequest(method, uri);
+    request.headers.addAll(await _authOnlyHeaders());
+
+    fields.forEach((key, value) {
+      if (value == null) return;
+      request.fields[key] = value.toString();
+    });
+
+    if (idCardBytes != null && idCardBytes.isNotEmpty) {
+      final mediaType = _imageMediaType(idCardFilename);
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          "id_card",
+          idCardBytes,
+          filename: idCardFilename ?? "id-card.jpg",
+          contentType: mediaType,
+        ),
+      );
+    }
+
+    final streamed = await request.send();
+    final res = await http.Response.fromStream(streamed);
+    final decoded = _decode(res);
+
+    if (res.statusCode == 401 || res.statusCode == 403) {
+      throw Exception("Access denied. Admin login required.");
+    }
+
+    if (res.statusCode >= 400) {
+      final message =
+          decoded is Map<String, dynamic> ? decoded["message"] : null;
+      throw Exception(message ?? "Request failed (${res.statusCode})");
+    }
+
+    return decoded is Map<String, dynamic> ? decoded : {};
+  }
+
+  static MediaType _imageMediaType(String? filename) {
+    final name = (filename ?? "").toLowerCase();
+    if (name.endsWith(".png")) {
+      return MediaType("image", "png");
+    }
+    if (name.endsWith(".webp")) {
+      return MediaType("image", "webp");
+    }
+    if (name.endsWith(".gif")) {
+      return MediaType("image", "gif");
+    }
+    return MediaType("image", "jpeg");
   }
 
   // =======================
@@ -395,6 +467,19 @@ class AdminApi {
   static Future<Map<String, dynamic>> addConductor(
     Map<String, dynamic> data,
   ) async {
+    final idCardBytes = data.remove("id_card_bytes") as Uint8List?;
+    final idCardFilename = data.remove("id_card_filename")?.toString();
+
+    if (idCardBytes != null) {
+      return _sendMultipart(
+        "POST",
+        Uri.parse("$baseUrl/admin/conductors"),
+        data,
+        idCardBytes: idCardBytes,
+        idCardFilename: idCardFilename,
+      );
+    }
+
     final uri = Uri.parse("$baseUrl/admin/conductors");
 
     final res = await http.post(
@@ -424,6 +509,19 @@ class AdminApi {
     int id,
     Map<String, dynamic> data,
   ) async {
+    final idCardBytes = data.remove("id_card_bytes") as Uint8List?;
+    final idCardFilename = data.remove("id_card_filename")?.toString();
+
+    if (idCardBytes != null) {
+      return _sendMultipart(
+        "PUT",
+        Uri.parse("$baseUrl/admin/conductors/$id"),
+        data,
+        idCardBytes: idCardBytes,
+        idCardFilename: idCardFilename,
+      );
+    }
+
     final uri = Uri.parse("$baseUrl/admin/conductors/$id");
 
     final res = await http.put(

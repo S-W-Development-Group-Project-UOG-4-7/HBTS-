@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/admin_api.dart';
+import '../config.dart';
 import '../theme/app_theme.dart';
 import 'conductor_form_page.dart';
 
@@ -55,6 +56,16 @@ class _ConductorsPageState extends State<ConductorsPage> {
     final raw = c["conductor_id"] ?? c["id"];
     if (raw is int) return raw;
     return int.tryParse(raw?.toString() ?? "");
+  }
+
+  String? _idCardPreviewUrl(Map<String, dynamic> c) {
+    final raw = c["id_card_image_url"]?.toString();
+    if (raw == null || raw.isEmpty) return null;
+    if (raw.startsWith("http://") || raw.startsWith("https://")) {
+      return raw;
+    }
+    final base = AppConfig.baseUrl.replaceFirst("/api", "");
+    return "$base$raw";
   }
 
   Future<void> _openAddRecord() async {
@@ -181,20 +192,42 @@ class _ConductorsPageState extends State<ConductorsPage> {
                     itemBuilder: (context, index) {
                       final c = _conductors[index];
                       final conductorId = _conductorId(c);
+                      final idCardUrl = _idCardPreviewUrl(c);
 
                       return Card(
                         child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor:
-                                AppColors.warning.withAlpha((0.12 * 255).round()),
-                            child: const Icon(
-                              Icons.directions_bus_filled,
-                              color: AppColors.warning,
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: SizedBox(
+                              width: 48,
+                              height: 48,
+                              child: idCardUrl == null
+                                  ? Container(
+                                      color: AppColors.warning
+                                          .withAlpha((0.12 * 255).round()),
+                                      child: const Icon(
+                                        Icons.directions_bus_filled,
+                                        color: AppColors.warning,
+                                      ),
+                                    )
+                                  : Image.network(
+                                      idCardUrl,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stack) =>
+                                          Container(
+                                        color: AppColors.surface,
+                                        alignment: Alignment.center,
+                                        child: const Icon(
+                                          Icons.image_not_supported_outlined,
+                                          color: AppColors.textMuted,
+                                        ),
+                                      ),
+                                    ),
                             ),
                           ),
                           title: Text(_safe(c["name"])),
                           subtitle: Text(
-                            "Email: ${_safe(c["email"])}\nPhone: ${_safe(c["phone"])}\nCompany: ${_safe(c["company"])}\nCompany ID: ${_safe(c["operator_id"])}\nBus ID: ${_safe(c["bus_id"])}\nConductor ID: ${conductorId ?? "-"}",
+                            "Email: ${_safe(c["email"])}\nID Number: ${_safe(c["id_number"] ?? c["idNumber"])}\nPhone: ${_safe(c["phone"])}\nCompany: ${_safe(c["company"])}\nCompany ID: ${_safe(c["operator_id"])}\nBus ID: ${_safe(c["bus_id"])}\nConductor ID: ${conductorId ?? "-"}",
                           ),
                           trailing: Wrap(
                             spacing: 8,

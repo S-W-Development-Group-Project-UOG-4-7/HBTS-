@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/driver_admin_api.dart';
+import '../services/admin_api.dart';
 import '../theme/app_theme.dart';
 
 class DriverReviewForm extends StatefulWidget {
@@ -20,8 +21,11 @@ class _DriverReviewFormState extends State<DriverReviewForm> {
   late TextEditingController phoneController;
   late TextEditingController reasonController;
 
-  String selectedOperator = 'SL Bus Company';
+  String? selectedOperator;
+  String? _currentOperator;
   bool _submitting = false;
+  bool _loadingOperators = false;
+  List<String> _operatorOptions = [];
 
   @override
   void initState() {
@@ -33,8 +37,10 @@ class _DriverReviewFormState extends State<DriverReviewForm> {
     phoneController = TextEditingController(text: _read(["phone"]));
     reasonController =
         TextEditingController(text: _read(["rejection_reason", "reason"]));
-    selectedOperator =
-        _read(["operator", "operator_name"], fallback: selectedOperator);
+    final initialOperator = _read(["operator", "operator_name"]);
+    _currentOperator = initialOperator.isNotEmpty ? initialOperator : null;
+    selectedOperator = null;
+    _loadOperators();
   }
 
   @override
@@ -103,7 +109,7 @@ class _DriverReviewFormState extends State<DriverReviewForm> {
         fullName: nameController.text.trim(),
         licenseNumber: licenseController.text.trim(),
         phone: phoneController.text.trim(),
-        operatorName: selectedOperator,
+        operatorName: selectedOperator ?? _currentOperator,
       );
       if (!mounted) return;
       _showMessage("Driver updated");
@@ -123,6 +129,32 @@ class _DriverReviewFormState extends State<DriverReviewForm> {
         backgroundColor: isError ? Colors.red : null,
       ),
     );
+  }
+
+  Future<void> _loadOperators() async {
+    setState(() => _loadingOperators = true);
+    try {
+      final data = await AdminApi.getCompanies();
+      if (!mounted) return;
+      final names = data
+          .whereType<Map<String, dynamic>>()
+          .map((c) => c["name"]?.toString().trim() ?? "")
+          .where((name) => name.isNotEmpty)
+          .toSet()
+          .toList()
+        ..sort();
+      setState(() {
+        _operatorOptions = names;
+        if (_currentOperator != null &&
+            _operatorOptions.contains(_currentOperator)) {
+          selectedOperator = _currentOperator;
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
+    } finally {
+      if (mounted) setState(() => _loadingOperators = false);
+    }
   }
 
   @override
@@ -171,21 +203,22 @@ class _DriverReviewFormState extends State<DriverReviewForm> {
             const SizedBox(height: 16),
 
             DropdownButtonFormField<String>(
-              initialValue: selectedOperator,
+              value: selectedOperator,
+              hint: _loadingOperators
+                  ? const Text('Loading operators...')
+                  : const Text('Select operator'),
               decoration: const InputDecoration(
                 labelText: 'Bus Operator',
                 border: OutlineInputBorder(),
               ),
-              items: const [
-                DropdownMenuItem(
-                  value: 'SL Bus Company',
-                  child: Text('SL Bus Company'),
-                ),
-                DropdownMenuItem(
-                  value: 'Private Owner',
-                  child: Text('Private Owner'),
-                ),
-              ],
+              items: _operatorOptions
+                  .map(
+                    (value) => DropdownMenuItem(
+                      value: value,
+                      child: Text(value),
+                    ),
+                  )
+                  .toList(),
               onChanged: _submitting
                   ? null
                   : (value) {
@@ -205,11 +238,15 @@ class _DriverReviewFormState extends State<DriverReviewForm> {
             const SizedBox(height: 20),
 
             Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Expanded(
+                SizedBox(
+                  width: 130,
+                  height: 36,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.success,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                     ),
                     onPressed:
                         _submitting ? null : () => _changeStatus("approved"),
@@ -217,36 +254,29 @@ class _DriverReviewFormState extends State<DriverReviewForm> {
                         _submitting ? const Text('Working...') : const Text('Approve'),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
+                const SizedBox(width: 12),
+                SizedBox(
+                  width: 130,
+                  height: 36,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.danger,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                     ),
                     onPressed:
                         _submitting ? null : () => _changeStatus("rejected"),
                     child: _submitting ? const Text('Working...') : const Text('Reject'),
                   ),
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _submitting ? null : _updateDriver,
-                    child: _submitting
-                        ? const Text('Saving...')
-                        : const Text('Update'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
+                const SizedBox(width: 12),
+                SizedBox(
+                  width: 130,
+                  height: 36,
                   child: OutlinedButton(
                     onPressed: _submitting ? null : () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                    ),
                     child: const Text('Cancel'),
                   ),
                 ),
@@ -277,4 +307,3 @@ class _DriverReviewFormState extends State<DriverReviewForm> {
     );
   }
 }
-

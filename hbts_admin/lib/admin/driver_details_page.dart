@@ -148,7 +148,6 @@ class _DriverDetailsPageState extends State<DriverDetailsPage> {
                     _detailRow("License", _safe(driver?["license_number"])),
                     _detailRow("Phone", _safe(driver?["phone"])),
                     _detailRow("Bus Operator", _safe(driver?["operator_name"])),
-                    _detailRow("User ID", _safe(driver?["user_id"])),
                     _detailRow("Bus Operator ID", _safe(driver?["operator_id"])),
                     _detailRow("Source", _safe(driver?["source"])),
                     _detailRow(
@@ -172,24 +171,35 @@ class _DriverDetailsPageState extends State<DriverDetailsPage> {
               Padding(
                 padding: const EdgeInsets.only(top: 16),
                 child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.assignment_turned_in),
-                    label: const Text("Review / Approve / Reject"),
-                    onPressed: () async {
-                      final changed = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              DriverReviewForm(driverData: driver ?? {}),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 140,
+                        height: 36,
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.assignment_turned_in, size: 18),
+                          label: const Text("Review"),
+                          onPressed: () async {
+                            final changed = await Navigator.push<bool>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    DriverReviewForm(driverData: driver ?? {}),
+                              ),
+                            );
+                            if (changed == true) {
+                              await _load();
+                              if (!context.mounted) return;
+                              Navigator.pop(context, true);
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                          ),
                         ),
-                      );
-                      if (changed == true) {
-                        await _load();
-                        if (!context.mounted) return;
-                        Navigator.pop(context, true);
-                      }
-                    },
+                      ),
+                    ],
                   ),
                 ),
               ),

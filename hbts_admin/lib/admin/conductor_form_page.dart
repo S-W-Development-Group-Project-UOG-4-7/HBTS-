@@ -1,5 +1,8 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import '../services/admin_api.dart';
+import '../config.dart';
 import '../theme/app_theme.dart';
 
 class ConductorFormPage extends StatefulWidget {
@@ -15,6 +18,7 @@ class _ConductorFormPageState extends State<ConductorFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
+  final _idNumberCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
 
@@ -27,6 +31,10 @@ class _ConductorFormPageState extends State<ConductorFormPage> {
   String? _selectedCompanyName;
   int? _selectedBusId;
   bool _isActive = true;
+  String? _existingIdCardUrl;
+  String? _idCardName;
+  List<int>? _idCardBytes;
+  String? _idCardError;
 
   int? get _conductorId {
     final c = widget.conductor;
@@ -43,10 +51,14 @@ class _ConductorFormPageState extends State<ConductorFormPage> {
     if (c != null) {
       _nameCtrl.text = c["name"]?.toString() ?? "";
       _emailCtrl.text = c["email"]?.toString() ?? "";
+      _idNumberCtrl.text = c["id_number"]?.toString() ??
+          c["idNumber"]?.toString() ??
+          "";
       _phoneCtrl.text = c["phone"]?.toString() ?? "";
       _selectedCompanyId = _toInt(c["operator_id"]);
       _selectedCompanyName = c["company"]?.toString();
       _selectedBusId = _toInt(c["bus_id"]);
+      _existingIdCardUrl = c["id_card_image_url"]?.toString();
       if (c["is_active"] is bool) {
         _isActive = c["is_active"] == true;
       }
@@ -59,6 +71,7 @@ class _ConductorFormPageState extends State<ConductorFormPage> {
   void dispose() {
     _nameCtrl.dispose();
     _emailCtrl.dispose();
+    _idNumberCtrl.dispose();
     _phoneCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();
@@ -117,6 +130,7 @@ class _ConductorFormPageState extends State<ConductorFormPage> {
     return {
       "name": _nameCtrl.text.trim(),
       "email": _emailCtrl.text.trim(),
+      "id_number": _idNumberCtrl.text.trim(),
       "phone": _phoneCtrl.text.trim(),
       if (_passwordCtrl.text.trim().isNotEmpty)
       "password": _passwordCtrl.text,
@@ -127,11 +141,43 @@ class _ConductorFormPageState extends State<ConductorFormPage> {
     };
   }
 
+  String? _idCardPreviewUrl() {
+    final raw = _existingIdCardUrl;
+    if (raw == null || raw.isEmpty) return null;
+    if (raw.startsWith("http://") || raw.startsWith("https://")) {
+      return raw;
+    }
+    final base = AppConfig.baseUrl.replaceFirst("/api", "");
+    return "$base$raw";
+  }
+
+  Future<void> _pickIdCard() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+    if (!mounted || result == null || result.files.isEmpty) return;
+    final file = result.files.single;
+    if (file.bytes == null) return;
+    setState(() {
+      _idCardBytes = file.bytes;
+      _idCardName = file.name;
+      _idCardError = null;
+    });
+  }
+
   Future<void> _addRecord() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_idCardBytes == null) {
+      setState(() => _idCardError = "ID card photo is required");
+      return;
+    }
     setState(() => _saving = true);
     try {
-      await AdminApi.addConductor(_buildPayload());
+      final payload = _buildPayload();
+      payload["id_card_bytes"] = _idCardBytes;
+      payload["id_card_filename"] = _idCardName;
+      await AdminApi.addConductor(payload);
       if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text("Conductor added")));
@@ -149,9 +195,18 @@ class _ConductorFormPageState extends State<ConductorFormPage> {
     final id = _conductorId;
     if (id == null) return;
     if (!_formKey.currentState!.validate()) return;
+    if (_idCardBytes == null && (_existingIdCardUrl ?? "").isEmpty) {
+      setState(() => _idCardError = "ID card photo is required");
+      return;
+    }
     setState(() => _saving = true);
     try {
-      await AdminApi.updateConductor(id, _buildPayload());
+      final payload = _buildPayload();
+      if (_idCardBytes != null) {
+        payload["id_card_bytes"] = _idCardBytes;
+        payload["id_card_filename"] = _idCardName;
+      }
+      await AdminApi.updateConductor(id, payload);
       if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text("Conductor updated")));
@@ -205,10 +260,102 @@ class _ConductorFormPageState extends State<ConductorFormPage> {
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
+                  controller: _idNumberCtrl,
+                  decoration: const InputDecoration(labelText: "ID Number"),
+                  validator: _required,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
                   controller: _phoneCtrl,
                   decoration: const InputDecoration(labelText: "Phone"),
                   keyboardType: TextInputType.phone,
                   validator: _required,
+                ),
+                const SizedBox(height: 12),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "ID Card Photo",
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _idCardName ??
+                                    (_existingIdCardUrl ?? "No file selected"),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            OutlinedButton.icon(
+                              onPressed: _pickIdCard,
+                              icon: const Icon(Icons.upload_file),
+                              label: Text(
+                                _idCardBytes != null || _existingIdCardUrl != null
+                                    ? "Replace"
+                                    : "Upload",
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        if (_idCardBytes != null)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.memory(
+                              Uint8List.fromList(_idCardBytes!),
+                              height: 140,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        else if (_idCardPreviewUrl() != null)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.network(
+                              _idCardPreviewUrl()!,
+                              height: 140,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stack) => Container(
+                                height: 140,
+                                color: AppColors.surface,
+                                alignment: Alignment.center,
+                                child: const Text("Failed to load preview"),
+                              ),
+                            ),
+                          )
+                        else
+                          Container(
+                            height: 140,
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.outline),
+                            ),
+                            alignment: Alignment.center,
+                            child: const Text("No preview available"),
+                          ),
+                        if (_idCardError != null) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            _idCardError!,
+                            style: const TextStyle(color: AppColors.danger),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int>(

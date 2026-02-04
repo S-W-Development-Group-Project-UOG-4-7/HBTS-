@@ -15,6 +15,7 @@ class _CompanyFormPageState extends State<CompanyFormPage> {
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+  final _addressCtrl = TextEditingController();
 
   bool _saving = false;
 
@@ -34,6 +35,7 @@ class _CompanyFormPageState extends State<CompanyFormPage> {
       _nameCtrl.text = c["name"]?.toString() ?? "";
       _emailCtrl.text = c["email"]?.toString() ?? "";
       _phoneCtrl.text = c["phone"]?.toString() ?? "";
+      _addressCtrl.text = c["address"]?.toString() ?? "";
     }
   }
 
@@ -42,6 +44,7 @@ class _CompanyFormPageState extends State<CompanyFormPage> {
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _phoneCtrl.dispose();
+    _addressCtrl.dispose();
     super.dispose();
   }
 
@@ -50,6 +53,7 @@ class _CompanyFormPageState extends State<CompanyFormPage> {
       "name": _nameCtrl.text.trim(),
       "email": _emailCtrl.text.trim(),
       "phone": _phoneCtrl.text.trim(),
+      "address": _addressCtrl.text.trim(),
     };
   }
 
@@ -130,6 +134,13 @@ class _CompanyFormPageState extends State<CompanyFormPage> {
                   decoration: const InputDecoration(labelText: "Phone"),
                   keyboardType: TextInputType.phone,
                   validator: _required,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _addressCtrl,
+                  decoration: const InputDecoration(labelText: "Address"),
+                  validator: _required,
+                  maxLines: 2,
                 ),
                 const SizedBox(height: 18),
                 Align(

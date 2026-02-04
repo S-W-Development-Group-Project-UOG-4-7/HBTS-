@@ -205,7 +205,7 @@ class _CompaniesPageState extends State<CompaniesPage> {
                           ),
                           title: Text(_safe(c["name"])),
                           subtitle: Text(
-                            "Email: ${_safe(c["email"])}\nPhone: ${_safe(c["phone"])}\nCompany ID: ${companyId ?? "-"}",
+                            "Email: ${_safe(c["email"])}\nPhone: ${_safe(c["phone"])}\nAddress: ${_safe(c["address"])}\nCompany ID: ${companyId ?? "-"}",
                           ),
                           trailing: Wrap(
                             spacing: 8,
