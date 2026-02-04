@@ -36,7 +36,10 @@ dependencies:
   shared_preferences: ^2.2.2
   provider: ^6.0.5
   web_socket_channel: ^2.4.0
+<<<<<<< HEAD
   google_fonts: ^6.1.0
+=======
+>>>>>>> origin/develop
   mobile_scanner: ^5.0.0
   google_maps_flutter: ^2.6.1
   flutter_polyline_points: ^2.0.0

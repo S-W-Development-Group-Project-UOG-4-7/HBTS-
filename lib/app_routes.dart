@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+<<<<<<< HEAD
 import 'screens/home_page.dart';
 import 'screens/login_page.dart';
 import 'screens/profile_page.dart';
@@ -18,14 +19,27 @@ import 'screens/booking_success_page.dart';
 import 'admin/dashboard.dart';
 import 'screens/upcoming_today_page.dart';
 
+=======
+import 'admin/dashboard.dart';
+>>>>>>> origin/develop
 import 'conductor/conductor_active_trip_page.dart';
-import 'conductor/conductor_shell.dart';
-import 'conductor/scan_qr_page.dart';
 import 'conductor/conductor_booking_details_page.dart';
 import 'conductor/conductor_bookings_page.dart';
-
-
-
+import 'conductor/conductor_shell.dart';
+import 'conductor/scan_qr_page.dart';
+import 'operator/operator_start_page.dart';
+import 'screens/booking_success_page.dart';
+import 'screens/confirm_booking_page.dart';
+import 'screens/home_page.dart';
+import 'screens/login_page.dart';
+import 'screens/my_bookings_page.dart';
+import 'screens/notifications_page.dart';
+import 'screens/profile_page.dart';
+import 'screens/schedule_page.dart';
+import 'screens/seat_selection_page.dart';
+import 'screens/track_bus_page.dart';
+import 'screens/track_my_booking_page.dart';
+import 'screens/trip_details_page.dart';
 
 class AppRoutes {
   static const login = '/login';
@@ -37,8 +51,17 @@ class AppRoutes {
   static const trackMyBooking = '/track-my-booking';
   static const trackBus = '/track-bus';
   static const notifications = '/notifications';
+<<<<<<< HEAD
   static const upcomingToday = '/upcoming-today';
 
+=======
+  static const conductorHome = '/conductor';
+  static const conductorScan = '/conductor/scan';
+  static const conductorActiveTrip = '/conductor/active-trip';
+  static const conductorBookings = '/conductor/bookings';
+  static const conductorBookingDetails = '/conductor/booking-details';
+  static const upcomingToday = '/upcoming-today';
+>>>>>>> origin/develop
 
   static const tripDetails = '/trip-details';
   static const seatSelect = '/seat-select';
@@ -47,21 +70,40 @@ class AppRoutes {
 
   static const adminHome = '/admin/dashboard';
 
-  static const conductorHome = '/conductor/home';
-  static const conductorActiveTrip = '/conductor/active-trip';
-  static const conductorScan = '/conductor/scan';
-  static const conductorBookings = '/conductor/bookings';
-  static const conductorBookingDetails = '/conductor/booking-details';
-
-
-
   static Route<dynamic> onGenerate(RouteSettings settings) {
     switch (settings.name) {
       case login:
         return MaterialPageRoute(builder: (_) => const LoginScreen());
 
       case adminHome:
-        return MaterialPageRoute(builder: (_) => const AdminDashboard());  
+        return MaterialPageRoute(builder: (_) => const AdminDashboard());
+
+      case conductorHome:
+        return MaterialPageRoute(builder: (_) => const ConductorShell());
+
+      case conductorScan:
+        return MaterialPageRoute(builder: (_) => const ConductorScanPage());
+
+      case conductorActiveTrip:
+        return MaterialPageRoute(builder: (_) => const ConductorActiveTripPage());
+
+      case conductorBookings:
+        final args = settings.arguments;
+        if (args is Map && args["tripId"] is int) {
+          return MaterialPageRoute(
+            builder: (_) => ConductorBookingsPage(tripId: args["tripId"] as int),
+          );
+        }
+        return _badRoute("ConductorBookings args missing");
+
+      case conductorBookingDetails:
+        final args = settings.arguments;
+        if (args is Map && args["booking"] != null) {
+          return MaterialPageRoute(
+            builder: (_) => ConductorBookingDetailsPage(booking: args["booking"]),
+          );
+        }
+        return _badRoute("ConductorBookingDetails args missing");
 
       case home:
         return MaterialPageRoute(builder: (_) => const HomePage());
@@ -82,6 +124,9 @@ class AppRoutes {
       case myBookings:
         return MaterialPageRoute(builder: (_) => const PassengerBookingsPage());
 
+      case upcomingToday:
+        return MaterialPageRoute(builder: (_) => const PassengerBookingsPage());
+
       case notifications:
         return MaterialPageRoute(builder: (_) => const NotificationsPage());
 
@@ -91,11 +136,15 @@ class AppRoutes {
       case trackBus:
         return MaterialPageRoute(builder: (_) => const TrackBusPage());
 
+<<<<<<< HEAD
 
       case upcomingToday:
         return MaterialPageRoute(builder: (_) => const UpcomingTodayPage());
 
       // ✅ NEW FLOW ROUTES (must be BEFORE default)
+=======
+      // New flow routes (must be before default)
+>>>>>>> origin/develop
       case tripDetails:
         final args = settings.arguments;
         if (args is TripDetailsArgs) {
@@ -124,33 +173,9 @@ class AppRoutes {
         }
         return _badRoute("BookingSuccess args missing");
 
-      case AppRoutes.conductorHome:
-        return MaterialPageRoute(builder: (_) => const ConductorShell());
-
-      case AppRoutes.conductorActiveTrip:
-        return MaterialPageRoute(builder: (_) => const ConductorActiveTripPage());
-
-      case AppRoutes.conductorScan:
-        return MaterialPageRoute(builder: (_) => const ConductorScanPage());
-
-      case AppRoutes.conductorBookings:
-      final args = settings.arguments as Map<String, dynamic>? ?? {};
-      final tripId = args["tripId"] as int?;
-      if (tripId == null) return _badRoute("tripId missing");
-      return MaterialPageRoute(builder: (_) => ConductorBookingsPage(tripId: tripId));
-
-      case AppRoutes.conductorBookingDetails:
-        final args = settings.arguments as Map<String, dynamic>? ?? {};
-        final booking = args["booking"];
-        if (booking == null) return _badRoute("booking missing");
-        return MaterialPageRoute(builder: (_) => ConductorBookingDetailsPage(booking: booking));
-
-  
-
-      // ✅ default MUST be last
+      // Default must be last
       default:
         return _badRoute("Route not found: ${settings.name}");
-
     }
   }
 

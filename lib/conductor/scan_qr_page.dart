@@ -60,6 +60,7 @@ class _ConductorScanPageState extends State<ConductorScanPage> {
 
     // pause scanning while verifying
     await _controller.stop();
+    if (!mounted) return;
 
     try {
       final res = await ConductorApi.scanVerify(

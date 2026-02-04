@@ -71,6 +71,7 @@ class _OperatorPlatformsPageState extends State<OperatorPlatformsPage> {
       },
     );
 
+    if (!mounted) return;
     if (created != true) return;
 
     if (terminalCtrl.text.trim().isEmpty || nameCtrl.text.trim().isEmpty) {
@@ -180,7 +181,7 @@ class _OperatorPlatformsPageState extends State<OperatorPlatformsPage> {
                         ),
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: _statusColor(status).withOpacity(0.12),
+                            backgroundColor: _statusColor(status).withValues(alpha: 0.12),
                             child: Icon(Icons.place, color: _statusColor(status)),
                           ),
                           title: Text("Platform $number - $name"),

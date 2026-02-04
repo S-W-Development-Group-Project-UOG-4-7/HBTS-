@@ -88,7 +88,7 @@ class _UpcomingTodayPageState extends State<UpcomingTodayPage> {
                       : ListView.separated(
                           padding: const EdgeInsets.all(12),
                           itemCount: _items.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 2),
+                          separatorBuilder: (_, _) => const SizedBox(height: 2),
                           itemBuilder: (context, i) {
                             final b = _items[i];
                             return _UpcomingBookingCard(
@@ -133,7 +133,7 @@ class _UpcomingBookingCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.10),
+              color: Colors.black.withValues(alpha: 0.10),
               blurRadius: 18,
               offset: const Offset(0, 10),
             ),

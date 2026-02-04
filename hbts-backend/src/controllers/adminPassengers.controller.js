@@ -10,6 +10,7 @@ export const getPassengers = async (req, res) => {
     FROM users u
     JOIN roles r ON u.role_id = r.role_id
     WHERE r.role_name='passenger'
+      AND u.deleted_at IS NULL
       AND (LOWER(name) LIKE LOWER($1) OR LOWER(email) LIKE LOWER($1))
     ORDER BY created_at DESC
     `,
@@ -22,7 +23,14 @@ export const getPassengers = async (req, res) => {
 export const getPassengerById = async (req, res) => {
   const { id } = req.params;
   const result = await pool.query(
-    `SELECT user_id, name, email, phone, created_at FROM users WHERE user_id=$1`,
+    `
+    SELECT u.user_id, u.name, u.email, u.phone, u.created_at, u.updated_at,
+           u.is_verified, r.role_name
+    FROM users u
+    JOIN roles r ON u.role_id = r.role_id
+    WHERE u.user_id = $1
+      AND u.deleted_at IS NULL
+    `,
     [id]
   );
   if (!result.rows.length) {
@@ -69,6 +77,7 @@ export const updatePassenger = async (req, res) => {
           phone = $2,
           updated_at = now()
       WHERE user_id = $3
+        AND deleted_at IS NULL
       RETURNING user_id, name, email, phone
       `,
       [name, phone ?? null, id]
@@ -88,6 +97,21 @@ export const updatePassenger = async (req, res) => {
 // DELETE passenger
 export const deletePassenger = async (req, res) => {
   const { id } = req.params;
-  await pool.query("DELETE FROM users WHERE user_id=$1", [id]);
+  const result = await pool.query(
+    `
+    UPDATE users
+    SET deleted_at = now(),
+        updated_at = now()
+    WHERE user_id = $1
+      AND deleted_at IS NULL
+    RETURNING user_id
+    `,
+    [id]
+  );
+
+  if (!result.rows.length) {
+    return res.status(404).json({ message: "Passenger not found" });
+  }
+
   res.json({ message: "Passenger deleted" });
 };

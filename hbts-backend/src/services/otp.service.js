@@ -50,4 +50,6 @@ export async function verifyOtp({ challengeId, otp, purpose }) {
     "UPDATE otp_challenges SET consumed_at=now() WHERE id=$1",
     [challengeId]
   );
+
+  return ch.user_id;
 }

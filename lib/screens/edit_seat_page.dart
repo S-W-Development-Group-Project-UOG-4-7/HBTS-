@@ -61,14 +61,16 @@ class _EditSeatPageState extends State<EditSeatPage> {
         return s;
       }).toList();
 
+      if (!mounted) return;
       setState(() => _seats = updated);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("Seat load failed: $e")));
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Seat load failed: $e")));
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -184,15 +186,21 @@ class _EditSeatPageState extends State<EditSeatPage> {
                             final c = (index % cols) + 1;
 
                             final seat = seatByPos["$r:$c"];
-                            if (seat == null || seat.seatType == "aisle") return const SizedBox.shrink();
+                            if (seat == null || seat.seatType == "aisle") {
+                              return const SizedBox.shrink();
+                            }
 
                             final booked = seat.isBooked;
                             final selected = _selectedSeatId == seat.seatId;
 
                             Color bg;
-                            if (booked) bg = Colors.red.shade300;
-                            else if (selected) bg = Colors.blue.shade700;
-                            else bg = Colors.grey.shade200;
+                            if (booked) {
+                              bg = Colors.red.shade300;
+                            } else if (selected) {
+                              bg = Colors.blue.shade700;
+                            } else {
+                              bg = Colors.grey.shade200;
+                            }
 
                             return InkWell(
                               onTap: () => _select(seat),

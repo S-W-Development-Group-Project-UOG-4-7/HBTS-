@@ -34,56 +34,56 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _handleSignup() async {
-  print("SIGNUP button pressed - calling backend");
+    debugPrint("SIGNUP button pressed - calling backend");
 
-  if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) return;
 
-  if (!_agreeToTerms) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please agree to the terms and conditions'),
-        backgroundColor: Colors.red,
-      ),
-    );
-    return;
-  }
-
-  setState(() => _isLoading = true);
-
-  try {
-    final result = await AuthApi.signup(
-      fullName: _nameController.text.trim(),
-      email: _emailController.text.trim(),
-      phone: _phoneController.text.trim(),
-      password: _passwordController.text,
-    );
-
-    print("Signup API response: $result");
-
-    final challengeId = int.tryParse(result["challengeId"].toString());
-    if (challengeId == null) throw Exception("Invalid challengeId from server");
-
-    if (!mounted) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => OtpScreen(
-          flow: OtpFlow.signupVerify,
-          challengeId: challengeId,
+    if (!_agreeToTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please agree to the terms and conditions'),
+          backgroundColor: Colors.red,
         ),
-      ),
-    );
-  } catch (e) {
-    print("SIGNUP ERROR: $e");
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(e.toString().replaceFirst("Exception: ", ""))),
-    );
-  } finally {
-    if (mounted) setState(() => _isLoading = false);
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final result = await AuthApi.signup(
+        fullName: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        phone: _phoneController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      debugPrint("Signup API response: $result");
+
+      final challengeId = int.tryParse(result["challengeId"].toString());
+      if (challengeId == null) throw Exception("Invalid challengeId from server");
+
+      if (!mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => OtpScreen(
+            flow: OtpFlow.signupVerify,
+            challengeId: challengeId,
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint("SIGNUP ERROR: $e");
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst("Exception: ", ""))),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
-}
 
 
   @override

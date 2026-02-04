@@ -37,15 +37,17 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
     setState(() => _loading = true);
     try {
       final data = await SeatApi.getTripSeats(widget.args.trip.id);
+      if (!mounted) return;
       setState(() {
         _seats = data;
       });
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Seat load failed: $e")));
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Seat load failed: $e")));
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 

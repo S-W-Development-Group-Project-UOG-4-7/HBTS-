@@ -17,7 +17,7 @@ BookingStatusUI mapUiStatus(MyBookingItem b) {
     return BookingStatusUI.completed;
   }
 
-  // If passenger-side stale → show as completed
+  // If passenger-side stale -> show as completed
   if ((trip == "running" || trip == "started")) {
     final staleAt = b.arrivalTime.add(const Duration(hours: 24));
     if (DateTime.now().isAfter(staleAt)) {
@@ -107,6 +107,15 @@ class _PassengerBookingsPageState extends State<PassengerBookingsPage> {
   }
 }
 
+class MyBookingsPage extends StatelessWidget {
+  const MyBookingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const PassengerBookingsPage();
+  }
+}
+
 class _BookingsList extends StatelessWidget {
   final List<MyBookingItem> items;
   final Future<void> Function() onRefresh;
@@ -127,7 +136,7 @@ class _BookingsList extends StatelessWidget {
           : ListView.separated(
               padding: const EdgeInsets.all(12),
               itemCount: items.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 2),
+              separatorBuilder: (_, _) => const SizedBox(height: 2),
               itemBuilder: (_, i) {
                 final b = items[i];
                 return _BookingCard(
@@ -159,10 +168,10 @@ class _BookingCard extends StatelessWidget {
 
     final dt = item.departureTime.toLocal();
     final dateTimeText =
-        "${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} · ${_time(dt)}";
+        "${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} - ${_time(dt)}";
 
     final theme = Theme.of(context);
-    final bg = theme.colorScheme.surfaceVariant;
+    final bg = theme.colorScheme.surfaceContainerHighest;
 
     return InkWell(
       borderRadius: BorderRadius.circular(16),
@@ -173,7 +182,7 @@ class _BookingCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: theme.dividerColor.withOpacity(0.35)),
+          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.35)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,7 +194,7 @@ class _BookingCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: theme.dividerColor.withOpacity(0.35)),
+                border: Border.all(color: theme.dividerColor.withValues(alpha: 0.35)),
               ),
               child: const Icon(Icons.directions_bus_rounded),
             ),
@@ -214,7 +223,7 @@ class _BookingCard extends StatelessWidget {
                     runSpacing: 8,
                     children: [
                       _MiniPill(text: "Seat: ${item.seatLabel}"),
-                      // You can add more pills later: price, boarding stop, etc.
+                      // Add more pills later: price, boarding stop, etc.
                     ],
                   )
                 ],
@@ -250,7 +259,7 @@ class _MiniPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.35)),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.35)),
       ),
       child: Text(text, style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700)),
     );
@@ -280,7 +289,7 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withAlpha((0.15 * 255).round()),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(text, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),

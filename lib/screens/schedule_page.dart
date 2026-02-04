@@ -35,7 +35,9 @@ class _SchedulePageState extends State<SchedulePage> {
       lastDate: DateTime(now.year + 1),
       initialDate: _date,
     );
-    if (picked != null) setState(() => _date = picked);
+    if (picked == null) return;
+    if (!mounted) return;
+    setState(() => _date = picked);
   }
 
   String _fmtDate(DateTime d) =>
@@ -69,13 +71,17 @@ class _SchedulePageState extends State<SchedulePage> {
 
     try {
       final trips = await TripApi.searchTrips(from: from, to: to, date: _date);
+      if (!mounted) return;
       setState(() => _results = trips);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Search failed: $e")),
       );
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 

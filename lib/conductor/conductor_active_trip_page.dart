@@ -626,7 +626,6 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage>
       if (mounted) setState(() => _loading = false);
     }
   }
-
   Future<void> _showTripEndedDialog(String type) async {
     final isCancelled = type == "TRIP_CANCELLED";
     final title = isCancelled ? "Trip cancelled" : "Trip ended";

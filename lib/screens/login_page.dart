@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
 
-import 'signup_page.dart';
+import '../admin/dashboard.dart';
+import '../operator/operator_start_page.dart';
 import '../services/auth_api.dart';
 import '../services/token_store.dart';
-import 'otp_page.dart';
 import 'home_page.dart';
-import '../admin/dashboard.dart';
-
-// ✅ operator imports
-import '../operator/operator_start_page.dart';
-import '../operator/pages/services/operator_api.dart';
-import '../operator/pages/services/utils/operator_session.dart';
+import 'otp_page.dart';
+import 'signup_page.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -28,7 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
-  // ✅ NEW: operator toggle
+  // Operator toggle
   bool _loginAsOperator = false;
 
   @override
@@ -95,6 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
+<<<<<<< HEAD
       final email = _emailController.text.trim();
       final password = _passwordController.text;
 
@@ -141,6 +138,11 @@ class _LoginScreenState extends State<LoginScreen> {
       final result = await AuthApi.unifiedLogin(
         identifier: email, // email OR phone
         password: password,
+=======
+      final result = await AuthApi.unifiedLogin(
+        identifier: _emailController.text.trim(), // email OR phone
+        password: _passwordController.text,
+>>>>>>> origin/develop
       );
 
       final tempToken = result["tempToken"] as String?;
@@ -226,7 +228,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // ✅ NEW: Operator toggle
+                    // Operator toggle
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -300,7 +302,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                         return null;
                       },
-
                     ),
 
                     const SizedBox(height: 20),

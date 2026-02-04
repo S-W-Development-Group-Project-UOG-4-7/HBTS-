@@ -38,7 +38,7 @@ class DriverLoginPage extends StatelessWidget {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => DriverDashboard(),
+                    builder: (context) => const DriverDashboard(),
                   ),
                 );
               },

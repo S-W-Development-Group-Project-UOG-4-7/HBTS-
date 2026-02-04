@@ -226,6 +226,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     initialDate: initial,
                   );
                   if (picked == null) return;
+                  if (!ctx.mounted) return;
                   birthdayDt = picked;
                   // Rebuild bottom sheet UI
                   (ctx as Element).markNeedsBuild();
@@ -248,7 +249,7 @@ class _ProfilePageState extends State<ProfilePage> {
               const SizedBox(height: 12),
 
               DropdownButtonFormField<String>(
-                value: gender,
+                initialValue: gender,
                 items: const [
                   DropdownMenuItem(value: "Male", child: Text("Male")),
                   DropdownMenuItem(value: "Female", child: Text("Female")),
@@ -282,7 +283,8 @@ class _ProfilePageState extends State<ProfilePage> {
                       birthday: bday,
                       gender: gender,
                     );
-                    if (mounted) Navigator.pop(ctx);
+                    if (!ctx.mounted) return;
+                    Navigator.pop(ctx);
                   },
                   icon: const Icon(Icons.save),
                   label: const Text("Save", style: TextStyle(fontWeight: FontWeight.bold)),
