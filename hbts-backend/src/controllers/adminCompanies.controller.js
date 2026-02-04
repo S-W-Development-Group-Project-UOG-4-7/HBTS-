@@ -14,6 +14,17 @@ const getCompanyColumns = async () => {
   return cachedCompanyColumns;
 };
 
+const ensureCompanyAddressColumn = async (needsAddress) => {
+  if (!needsAddress) return;
+  const columns = await getCompanyColumns();
+  if (!columns.includes("address")) {
+    await pool.query(
+      "ALTER TABLE company ADD COLUMN IF NOT EXISTS address TEXT"
+    );
+    cachedCompanyColumns = null;
+  }
+};
+
 const pickColumn = (columns, candidates) =>
   candidates.find((c) => columns.includes(c));
 
@@ -37,6 +48,7 @@ export const listCompanies = async (req, res) => {
       "mobile",
       "mobile_number",
     ]);
+    const addressCol = pickColumn(columns, ["address", "company_address"]);
     const deletedAtCol = pickColumn(columns, ["deleted_at"]);
 
     const conditions = [];
@@ -51,6 +63,7 @@ export const listCompanies = async (req, res) => {
       if (nameCol) parts.push(`LOWER(c."${nameCol}") LIKE LOWER($1)`);
       if (emailCol) parts.push(`LOWER(c."${emailCol}") LIKE LOWER($1)`);
       if (phoneCol) parts.push(`LOWER(c."${phoneCol}") LIKE LOWER($1)`);
+      if (addressCol) parts.push(`LOWER(c."${addressCol}") LIKE LOWER($1)`);
       if (parts.length) {
         conditions.push(`(${parts.join(" OR ")})`);
         params.push(`%${search}%`);
@@ -62,6 +75,7 @@ export const listCompanies = async (req, res) => {
       nameCol ? `c."${nameCol}" AS name` : "NULL AS name",
       emailCol ? `c."${emailCol}" AS email` : "NULL AS email",
       phoneCol ? `c."${phoneCol}" AS phone` : "NULL AS phone",
+      addressCol ? `c."${addressCol}" AS address` : "NULL AS address",
       columns.includes("created_at") ? `c."created_at"` : "NULL AS created_at",
       columns.includes("updated_at") ? `c."updated_at"` : "NULL AS updated_at",
     ];
@@ -91,6 +105,8 @@ export const listCompanies = async (req, res) => {
 
 export const addCompany = async (req, res) => {
   try {
+    const address = req.body?.address?.toString().trim() ?? "";
+    await ensureCompanyAddressColumn(!!address);
     const columns = await getCompanyColumns();
     if (!columns.length) {
       return res.status(500).json({ message: "Company table not configured" });
@@ -114,6 +130,7 @@ export const addCompany = async (req, res) => {
       "mobile",
       "mobile_number",
     ]);
+    const addressCol = pickColumn(columns, ["address", "company_address"]);
 
     const cols = [];
     const placeholders = [];
@@ -129,6 +146,7 @@ export const addCompany = async (req, res) => {
     addParam(nameCol, name);
     addParam(emailCol, email);
     addParam(phoneCol, phone);
+    addParam(addressCol, address || null);
 
     if (columns.includes("created_at")) {
       cols.push(`"created_at"`);
@@ -158,6 +176,8 @@ export const addCompany = async (req, res) => {
 export const updateCompany = async (req, res) => {
   try {
     const { id } = req.params;
+    const address = req.body?.address?.toString().trim() ?? "";
+    await ensureCompanyAddressColumn(!!address);
     const columns = await getCompanyColumns();
     if (!columns.length) {
       return res.status(500).json({ message: "Company table not configured" });
@@ -180,6 +200,7 @@ export const updateCompany = async (req, res) => {
       "mobile",
       "mobile_number",
     ]);
+    const addressCol = pickColumn(columns, ["address", "company_address"]);
 
     const updates = [];
     const params = [];
@@ -193,6 +214,7 @@ export const updateCompany = async (req, res) => {
     if (name) addUpdate(nameCol, name);
     if (email) addUpdate(emailCol, email);
     if (phone) addUpdate(phoneCol, phone);
+    if (address) addUpdate(addressCol, address);
 
     if (columns.includes("updated_at")) {
       updates.push(`"updated_at" = now()`);

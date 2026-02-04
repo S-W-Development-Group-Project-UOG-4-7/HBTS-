@@ -1,5 +1,7 @@
 import { pool } from "../db.js";
 import bcrypt from "bcrypt";
+import fs from "fs";
+import { toPublicPath } from "../utils/uploads.js";
 
 let cachedConductorColumns = null;
 const getConductorColumns = async () => {
@@ -45,9 +47,41 @@ const normalizeConductor = (row) => ({
   company: row.company ?? row.operator_name ?? row.company_name,
   bus_id: row.bus_id ?? row.busId,
   is_active: row.is_active ?? row.active,
+  id_number: row.id_number ?? row.idNumber ?? row.id_no,
+  id_card_image_url: row.id_card_image_url ?? row.idCardImageUrl ?? row.id_card_url,
   created_at: row.created_at ?? row.createdAt,
   updated_at: row.updated_at ?? row.updatedAt,
 });
+
+const cleanupFiles = (files) => {
+  if (!files) return;
+  const list = Array.isArray(files) ? files : [files];
+  list.forEach((file) => {
+    if (file?.path) fs.unlink(file.path, () => {});
+  });
+};
+
+const ensureConductorExtraColumns = async (needsIdNumber, needsIdCard) => {
+  if (!needsIdNumber && !needsIdCard) return;
+  const columns = await getConductorColumns();
+  const pending = [];
+  if (needsIdNumber && !columns.includes("id_number")) {
+    pending.push(
+      "ALTER TABLE conductors ADD COLUMN IF NOT EXISTS id_number TEXT"
+    );
+  }
+  if (needsIdCard && !columns.includes("id_card_image_url")) {
+    pending.push(
+      "ALTER TABLE conductors ADD COLUMN IF NOT EXISTS id_card_image_url TEXT"
+    );
+  }
+  for (const stmt of pending) {
+    await pool.query(stmt);
+  }
+  if (pending.length) {
+    cachedConductorColumns = null;
+  }
+};
 
 export const listConductors = async (req, res) => {
   try {
@@ -129,6 +163,10 @@ export const listConductors = async (req, res) => {
       cOperatorIdCol ? `c."${cOperatorIdCol}" AS operator_id` : "NULL AS operator_id",
       cBusIdCol ? `c."${cBusIdCol}" AS bus_id` : "NULL AS bus_id",
       cActiveCol ? `c."${cActiveCol}" AS is_active` : "NULL AS is_active",
+      conductorCols.includes("id_number") ? `c."id_number"` : "NULL AS id_number",
+      conductorCols.includes("id_card_image_url")
+        ? `c."id_card_image_url"`
+        : "NULL AS id_card_image_url",
       uNameCol ? `u."${uNameCol}" AS name` : "NULL AS name",
       uEmailCol ? `u."${uEmailCol}" AS email` : "NULL AS email",
       uPhoneCol ? `u."${uPhoneCol}" AS phone` : "NULL AS phone",
@@ -164,9 +202,20 @@ export const listConductors = async (req, res) => {
 export const addConductor = async (req, res) => {
   const client = await pool.connect();
   try {
+    const files = req.files || {};
+    const idFile =
+      (files.idCard && files.idCard[0]) ||
+      (files.id_card && files.id_card[0]);
+
+    const idNumberRaw = req.body?.idNumber ?? req.body?.id_number ?? "";
+    const idNumber = idNumberRaw.toString().trim();
+
+    await ensureConductorExtraColumns(!!idNumber, !!idFile);
+
     const conductorCols = await getConductorColumns();
     const userCols = await getUserColumns();
     if (!conductorCols.length || !userCols.length) {
+      cleanupFiles([idFile]);
       return res
         .status(500)
         .json({ message: "Conductors or users table not configured" });
@@ -182,13 +231,20 @@ export const addConductor = async (req, res) => {
     const isActive = req.body?.isActive ?? req.body?.is_active ?? true;
 
     if (!name || !email || !password) {
+      cleanupFiles([idFile]);
       return res
         .status(400)
         .json({ message: "Name, email, and password are required" });
     }
 
     if (busId == null) {
+      cleanupFiles([idFile]);
       return res.status(400).json({ message: "Bus is required" });
+    }
+
+    if (!idNumber) {
+      cleanupFiles([idFile]);
+      return res.status(400).json({ message: "ID number is required" });
     }
 
     await client.query("BEGIN");
@@ -200,6 +256,7 @@ export const addConductor = async (req, res) => {
       );
       if (!busCheck.rows.length) {
         await client.query("ROLLBACK");
+        cleanupFiles([idFile]);
         return res.status(400).json({ message: "Invalid bus_id" });
       }
       const busOperatorId = busCheck.rows[0].operator_id;
@@ -214,6 +271,7 @@ export const addConductor = async (req, res) => {
       );
       if (exists.rowCount > 0) {
         await client.query("ROLLBACK");
+        cleanupFiles([idFile]);
         return res.status(409).json({ message: "Email already exists" });
       }
     }
@@ -311,6 +369,15 @@ export const addConductor = async (req, res) => {
     addConductorParam(cUserIdCol, userId);
     addConductorParam(cOperatorIdCol, operatorId);
     addConductorParam(cBusIdCol, busId);
+    if (conductorCols.includes("id_number")) {
+      addConductorParam("id_number", idNumber);
+    }
+    if (conductorCols.includes("id_card_image_url")) {
+      addConductorParam(
+        "id_card_image_url",
+        idFile ? toPublicPath("conductors", idFile.filename) : null
+      );
+    }
     if (cActiveCol) addConductorParam(cActiveCol, !!isActive);
 
     if (conductorCols.includes("created_at")) {
@@ -344,6 +411,7 @@ export const addConductor = async (req, res) => {
     try {
       await client.query("ROLLBACK");
     } catch {}
+    cleanupFiles(Object.values(req.files || {}).flat());
     console.error("Add conductor error:", err);
     res.status(500).json({ message: "Failed to add conductor" });
   } finally {
@@ -355,9 +423,21 @@ export const updateConductor = async (req, res) => {
   const client = await pool.connect();
   try {
     const { id } = req.params;
+    const files = req.files || {};
+    const idFile =
+      (files.idCard && files.idCard[0]) ||
+      (files.id_card && files.id_card[0]);
+
+    const idNumberRaw = req.body?.idNumber ?? req.body?.id_number ?? null;
+    const idNumber =
+      idNumberRaw == null ? null : idNumberRaw.toString().trim();
+
+    await ensureConductorExtraColumns(!!idNumber, !!idFile);
+
     const conductorCols = await getConductorColumns();
     const userCols = await getUserColumns();
     if (!conductorCols.length || !userCols.length) {
+      cleanupFiles([idFile]);
       return res
         .status(500)
         .json({ message: "Conductors or users table not configured" });
@@ -379,6 +459,7 @@ export const updateConductor = async (req, res) => {
     const isActive = req.body?.isActive ?? req.body?.is_active ?? null;
 
     if (busId == null) {
+      cleanupFiles([idFile]);
       return res.status(400).json({ message: "Bus is required" });
     }
 
@@ -390,6 +471,7 @@ export const updateConductor = async (req, res) => {
     );
     if (!existing.rows.length) {
       await client.query("ROLLBACK");
+      cleanupFiles([idFile]);
       return res.status(404).json({ message: "Conductor not found" });
     }
 
@@ -403,6 +485,7 @@ export const updateConductor = async (req, res) => {
       );
       if (!busCheck.rows.length) {
         await client.query("ROLLBACK");
+        cleanupFiles([idFile]);
         return res.status(400).json({ message: "Invalid bus_id" });
       }
       const busOperatorId = busCheck.rows[0].operator_id;
@@ -485,6 +568,15 @@ export const updateConductor = async (req, res) => {
     if (operatorId != null) addConductorUpdate(cOperatorIdCol, operatorId);
     if (busId != null) addConductorUpdate(cBusIdCol, busId);
     if (isActive != null) addConductorUpdate(cActiveCol, !!isActive);
+    if (idNumber != null && conductorCols.includes("id_number")) {
+      addConductorUpdate("id_number", idNumber);
+    }
+    if (idFile && conductorCols.includes("id_card_image_url")) {
+      addConductorUpdate(
+        "id_card_image_url",
+        toPublicPath("conductors", idFile.filename)
+      );
+    }
 
     if (conductorCols.includes("updated_at")) {
       cUpdates.push(`"updated_at" = now()`);
@@ -513,11 +605,16 @@ export const updateConductor = async (req, res) => {
       company,
       bus_id: busId,
       is_active: isActive,
+      id_number: idNumber,
+      id_card_image_url: idFile
+        ? toPublicPath("conductors", idFile.filename)
+        : undefined,
     });
   } catch (err) {
     try {
       await client.query("ROLLBACK");
     } catch {}
+    cleanupFiles(Object.values(req.files || {}).flat());
     console.error("Update conductor error:", err);
     res.status(500).json({ message: "Failed to update conductor" });
   } finally {

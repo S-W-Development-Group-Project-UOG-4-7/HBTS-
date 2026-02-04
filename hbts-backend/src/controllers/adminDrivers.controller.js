@@ -136,8 +136,21 @@ const findTempDriverById = async (id) => {
   const idCol = getIdColumn(columns);
   if (!idCol) return null;
 
+  const tempOperatorIdCol = pickColumn(columns, [
+    "operator_id",
+    "operatorId",
+    "operatorid",
+    "company_id",
+  ]);
+  const joinSql = tempOperatorIdCol
+    ? ` LEFT JOIN company co ON co.operator_id = t."${tempOperatorIdCol}"`
+    : "";
+  const selectSql = tempOperatorIdCol
+    ? "SELECT t.*, co.name AS operator_name"
+    : "SELECT t.*";
+
   const { rows } = await pool.query(
-    `SELECT * FROM temp_drivers WHERE "${idCol}" = $1 LIMIT 1`,
+    `${selectSql} FROM temp_drivers t${joinSql} WHERE t."${idCol}" = $1 LIMIT 1`,
     [id]
   );
 
@@ -500,12 +513,36 @@ export const listDrivers = async (req, res) => {
         "userId",
         "userid",
       ]);
-      const driverJoin = driverUserIdCol
-        ? ` LEFT JOIN users u ON u.user_id = d."${driverUserIdCol}"`
-        : "";
-      const driverSelect = driverUserIdCol
-        ? `SELECT d.*, u.name AS user_name, u.email AS user_email, u.phone AS user_phone`
-        : "SELECT d.*";
+      const driverOperatorIdCol = pickColumn(driverColumns, [
+        "operator_id",
+        "operatorId",
+        "operatorid",
+        "company_id",
+      ]);
+      const driverJoinParts = [];
+      if (driverUserIdCol) {
+        driverJoinParts.push(
+          ` LEFT JOIN users u ON u.user_id = d."${driverUserIdCol}"`
+        );
+      }
+      if (driverOperatorIdCol) {
+        driverJoinParts.push(
+          ` LEFT JOIN company co ON co.operator_id = d."${driverOperatorIdCol}"`
+        );
+      }
+      const driverJoin = driverJoinParts.join("");
+      const driverSelectParts = ["d.*"];
+      if (driverUserIdCol) {
+        driverSelectParts.push(
+          "u.name AS user_name",
+          "u.email AS user_email",
+          "u.phone AS user_phone"
+        );
+      }
+      if (driverOperatorIdCol) {
+        driverSelectParts.push("co.name AS operator_name");
+      }
+      const driverSelect = `SELECT ${driverSelectParts.join(", ")}`;
 
       const driverIdCol = getIdColumn(driverColumns) ?? "driver_id";
       const driverOrderBy = driverColumns.includes("created_at")
@@ -541,18 +578,24 @@ export const listDrivers = async (req, res) => {
           "fullName",
           "driverName",
         ]);
+        const tempOperatorIdCol = pickColumn(tempColumns, [
+          "operator_id",
+          "operatorId",
+          "operatorid",
+          "company_id",
+        ]);
 
         const targetStatus = statusFilter ?? "pending";
         if (tempStatusCol) {
           tempConditions.push(
-            `LOWER("${tempStatusCol}") = $${tempConditions.length + 1}`
+            `LOWER(t."${tempStatusCol}") = $${tempConditions.length + 1}`
           );
           tempParams.push(targetStatus);
         }
 
         if (search && tempNameCol) {
           tempConditions.push(
-            `(LOWER("${tempNameCol}") LIKE LOWER($${tempConditions.length + 1}))`
+            `(LOWER(t."${tempNameCol}") LIKE LOWER($${tempConditions.length + 1}))`
           );
           tempParams.push(`%${search}%`);
         }
@@ -563,14 +606,21 @@ export const listDrivers = async (req, res) => {
 
         const tempIdCol = getIdColumn(tempColumns);
         const tempOrderBy = tempColumns.includes("created_at")
-          ? `"created_at"`
+          ? `t."created_at"`
           : tempIdCol
-            ? `"${tempIdCol}"`
+            ? `t."${tempIdCol}"`
             : null;
         const tempOrderClause = tempOrderBy ? ` ORDER BY ${tempOrderBy} DESC` : "";
 
+        const tempJoin = tempOperatorIdCol
+          ? ` LEFT JOIN company co ON co.operator_id = t."${tempOperatorIdCol}"`
+          : "";
+        const tempSelect = tempOperatorIdCol
+          ? "SELECT t.*, co.name AS operator_name"
+          : "SELECT t.*";
+
         const tempResult = await pool.query(
-          `SELECT * FROM temp_drivers${tempWhere}${tempOrderClause}`,
+          `${tempSelect} FROM temp_drivers t${tempJoin}${tempWhere}${tempOrderClause}`,
           tempParams
         );
 
@@ -596,14 +646,38 @@ export const getDriverById = async (req, res) => {
       "userId",
       "userid",
     ]);
+    const driverOperatorIdCol = pickColumn(driverColumns, [
+      "operator_id",
+      "operatorId",
+      "operatorid",
+      "company_id",
+    ]);
 
     if (driverColumns.length) {
-      const driverJoin = driverUserIdCol
-        ? ` LEFT JOIN users u ON u.user_id = d."${driverUserIdCol}"`
-        : "";
-      const driverSelect = driverUserIdCol
-        ? `SELECT d.*, u.name AS user_name, u.email AS user_email, u.phone AS user_phone`
-        : "SELECT d.*";
+      const driverJoinParts = [];
+      if (driverUserIdCol) {
+        driverJoinParts.push(
+          ` LEFT JOIN users u ON u.user_id = d."${driverUserIdCol}"`
+        );
+      }
+      if (driverOperatorIdCol) {
+        driverJoinParts.push(
+          ` LEFT JOIN company co ON co.operator_id = d."${driverOperatorIdCol}"`
+        );
+      }
+      const driverJoin = driverJoinParts.join("");
+      const driverSelectParts = ["d.*"];
+      if (driverUserIdCol) {
+        driverSelectParts.push(
+          "u.name AS user_name",
+          "u.email AS user_email",
+          "u.phone AS user_phone"
+        );
+      }
+      if (driverOperatorIdCol) {
+        driverSelectParts.push("co.name AS operator_name");
+      }
+      const driverSelect = `SELECT ${driverSelectParts.join(", ")}`;
       const result = await pool.query(
         `${driverSelect} FROM drivers d${driverJoin} WHERE d."${driverIdCol}" = $1 LIMIT 1`,
         [id]

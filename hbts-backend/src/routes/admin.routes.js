@@ -32,6 +32,7 @@ import {
   listConductors,
   updateConductor,
 } from "../controllers/adminConductors.controller.js";
+import { makeUploader } from "../utils/uploads.js";
 import {
   addBus,
   deleteBus,
@@ -64,6 +65,7 @@ import {
 import { addAdminUser } from "../controllers/adminUsers.controller.js";
 
 const router = express.Router();
+const conductorUpload = makeUploader("conductors");
 
 /* =========================
    AUTH & ROLE GUARD
@@ -148,9 +150,23 @@ router.delete("/companies/:id", deleteCompany);
 // GET conductors
 router.get("/conductors", listConductors);
 // ADD conductor
-router.post("/conductors", addConductor);
+router.post(
+  "/conductors",
+  conductorUpload.fields([
+    { name: "idCard", maxCount: 1 },
+    { name: "id_card", maxCount: 1 },
+  ]),
+  addConductor
+);
 // UPDATE conductor
-router.put("/conductors/:id", updateConductor);
+router.put(
+  "/conductors/:id",
+  conductorUpload.fields([
+    { name: "idCard", maxCount: 1 },
+    { name: "id_card", maxCount: 1 },
+  ]),
+  updateConductor
+);
 // DELETE conductor
 router.delete("/conductors/:id", deleteConductor);
 
