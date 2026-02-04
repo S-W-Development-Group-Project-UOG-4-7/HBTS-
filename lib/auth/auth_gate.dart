@@ -53,6 +53,13 @@ if (role == null) {
         (_) => false,
       );
       return;
+    case "operator":
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        routes.AppRoutes.operator,
+        (_) => false,
+      );
+      return;
     case "admin":
       Navigator.pushNamedAndRemoveUntil(
         context,

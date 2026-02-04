@@ -1,27 +1,6 @@
 import 'package:flutter/material.dart';
 
-<<<<<<< HEAD
-import 'screens/home_page.dart';
-import 'screens/login_page.dart';
-import 'screens/profile_page.dart';
-import 'screens/schedule_page.dart';
-import 'screens/my_bookings_page.dart';
-import 'screens/track_my_booking_page.dart';
-import 'screens/track_bus_page.dart';
-import 'operator/operator_start_page.dart';
-import 'screens/notifications_page.dart';
-
-import 'screens/trip_details_page.dart';
-import 'screens/seat_selection_page.dart';
-import 'screens/confirm_booking_page.dart';
-import 'screens/booking_success_page.dart';
-
 import 'admin/dashboard.dart';
-import 'screens/upcoming_today_page.dart';
-
-=======
-import 'admin/dashboard.dart';
->>>>>>> origin/develop
 import 'conductor/conductor_active_trip_page.dart';
 import 'conductor/conductor_booking_details_page.dart';
 import 'conductor/conductor_bookings_page.dart';
@@ -40,6 +19,7 @@ import 'screens/seat_selection_page.dart';
 import 'screens/track_bus_page.dart';
 import 'screens/track_my_booking_page.dart';
 import 'screens/trip_details_page.dart';
+import 'screens/upcoming_today_page.dart';
 
 class AppRoutes {
   static const login = '/login';
@@ -51,17 +31,12 @@ class AppRoutes {
   static const trackMyBooking = '/track-my-booking';
   static const trackBus = '/track-bus';
   static const notifications = '/notifications';
-<<<<<<< HEAD
   static const upcomingToday = '/upcoming-today';
-
-=======
   static const conductorHome = '/conductor';
   static const conductorScan = '/conductor/scan';
   static const conductorActiveTrip = '/conductor/active-trip';
   static const conductorBookings = '/conductor/bookings';
   static const conductorBookingDetails = '/conductor/booking-details';
-  static const upcomingToday = '/upcoming-today';
->>>>>>> origin/develop
 
   static const tripDetails = '/trip-details';
   static const seatSelect = '/seat-select';
@@ -125,7 +100,7 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const PassengerBookingsPage());
 
       case upcomingToday:
-        return MaterialPageRoute(builder: (_) => const PassengerBookingsPage());
+        return MaterialPageRoute(builder: (_) => const UpcomingTodayPage());
 
       case notifications:
         return MaterialPageRoute(builder: (_) => const NotificationsPage());
@@ -136,15 +111,7 @@ class AppRoutes {
       case trackBus:
         return MaterialPageRoute(builder: (_) => const TrackBusPage());
 
-<<<<<<< HEAD
-
-      case upcomingToday:
-        return MaterialPageRoute(builder: (_) => const UpcomingTodayPage());
-
-      // ✅ NEW FLOW ROUTES (must be BEFORE default)
-=======
       // New flow routes (must be before default)
->>>>>>> origin/develop
       case tripDetails:
         final args = settings.arguments;
         if (args is TripDetailsArgs) {

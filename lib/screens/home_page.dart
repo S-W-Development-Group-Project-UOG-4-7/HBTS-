@@ -103,6 +103,11 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       debugPrint("HOME INIT ERROR => $e");
       if (!mounted) return;
+      if (e.toString().contains("AUTH_EXPIRED")) {
+        await TokenStore.clear();
+        _goLogin();
+        return;
+      }
       setState(() {
         _loading = false;
         _user = null;

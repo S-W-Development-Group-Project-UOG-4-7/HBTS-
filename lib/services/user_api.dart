@@ -13,10 +13,7 @@ class UserApi {
 
   static Future<AppUser> fetchLoggedInUser() async {
     final token = await TokenStore.getAccessToken();
-<<<<<<< HEAD
-=======
     final baseUrl = AppConfig.baseUrl;
->>>>>>> origin/develop
 
     debugPrint(
       "ME CALL => $baseUrl$profileEndpoint | token=${token == null ? 'null' : 'present'}",
@@ -24,19 +21,15 @@ class UserApi {
 
     final res = await http
         .get(
-          Uri.parse("${AppConfig.baseUrl}$profileEndpoint"),
+          Uri.parse("$baseUrl$profileEndpoint"),
           headers: {
             "Authorization": "Bearer $token",
             "Content-Type": "application/json",
           },
         )
-<<<<<<< HEAD
         .timeout(const Duration(seconds: 10)); // prevents infinite loading
 
     print("ME RESP => ${res.statusCode} | ${res.body}");
-=======
-        .timeout(const Duration(seconds: 10));
->>>>>>> origin/develop
 
     if (res.statusCode == 200) {
       final decoded = jsonDecode(res.body);

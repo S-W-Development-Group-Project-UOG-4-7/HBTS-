@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../admin/dashboard.dart';
 import '../operator/operator_start_page.dart';
+import '../operator/pages/services/operator_api.dart';
+import '../operator/pages/services/utils/operator_session.dart';
 import '../services/auth_api.dart';
 import '../services/token_store.dart';
 import 'home_page.dart';
@@ -91,11 +93,10 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-<<<<<<< HEAD
       final email = _emailController.text.trim();
       final password = _passwordController.text;
 
-      // ✅ OPERATOR LOGIN (no OTP, token comes directly)
+      // Operator login (no OTP, token comes directly)
       if (_loginAsOperator) {
         final result = await OperatorApi.login(email: email, password: password);
 
@@ -113,13 +114,13 @@ class _LoginScreenState extends State<LoginScreen> {
           throw Exception("Operator id missing/invalid in response");
         }
 
-        // save session in memory (your existing code uses this)
+        // Save session in memory (your existing code uses this)
         OperatorSession.token = token;
         OperatorSession.operatorId = operatorId;
         OperatorSession.operatorName = operator["name"]?.toString();
         OperatorSession.operatorEmail = operator["email"]?.toString();
 
-        // ✅ save to TokenStore so main.dart routing works
+        // Save to TokenStore so main.dart routing works
         await TokenStore.saveToken(token);
         await TokenStore.saveRole("operator");
 
@@ -132,17 +133,10 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      // =======================
-      // PASSENGER / ADMIN LOGIN (OTP FLOW)
-      // =======================
+      // Passenger / admin login (OTP flow)
       final result = await AuthApi.unifiedLogin(
         identifier: email, // email OR phone
         password: password,
-=======
-      final result = await AuthApi.unifiedLogin(
-        identifier: _emailController.text.trim(), // email OR phone
-        password: _passwordController.text,
->>>>>>> origin/develop
       );
 
       final tempToken = result["tempToken"] as String?;

@@ -6,7 +6,6 @@ import 'operator_bus_register_page.dart';
 import 'operator_bus_stats_page.dart';
 import 'operator_login_page.dart';
 import 'operator_platforms_page.dart';
-import 'operator_routes_page.dart';
 import 'operator_staff_register_page.dart';
 import 'operator_trips_page.dart';
 import 'services/operator_api.dart';
@@ -1305,11 +1304,6 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
         label: "Platforms",
         icon: Icons.location_city,
         onTap: () => _openPage(const OperatorPlatformsPage(), inDrawer: inDrawer),
-      ),
-      _NavItem(
-        label: "Routes",
-        icon: Icons.alt_route,
-        onTap: () => _openPage(const OperatorRoutesPage(), inDrawer: inDrawer),
       ),
       _NavItem(
         label: "Bus Stats",

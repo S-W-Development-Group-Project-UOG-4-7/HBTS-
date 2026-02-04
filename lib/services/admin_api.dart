@@ -6,13 +6,8 @@ import '../config.dart';
 import 'token_store.dart';
 
 class AdminApi {
-<<<<<<< HEAD
-  // 🌐 Backend base URL
-  static String get baseUrl => AppConfig.baseUrl;
-=======
   // Backend base URL
-  static final String baseUrl = AppConfig.baseUrl;
->>>>>>> origin/develop
+  static String get baseUrl => AppConfig.baseUrl;
 
   // =======================
   // AUTH HEADERS
