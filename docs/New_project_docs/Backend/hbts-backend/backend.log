@@ -1,0 +1,74 @@
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+DATABASE_URL (backend): undefined
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+BOOT: starting expirePendingBookings job
+🚀 Server running on port 4000
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+[expirePendingBookings] tick 2026-02-03T11:28:00.027Z
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+expirePendingBookingsJob error: Error: SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a string
+    at C:\Users\thise\Downloads\mereged\HBTS--isalka\hbts-backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async expirePendingBookingsOnce (file:///C:/Users/thise/Downloads/mereged/HBTS--isalka/hbts-backend/src/jobs/expirePendingBookings.job.js:10:18)
+    at async file:///C:/Users/thise/Downloads/mereged/HBTS--isalka/hbts-backend/src/jobs/expirePendingBookings.job.js:40:7
+    at async Timeout._onTimeout (C:\Users\thise\Downloads\mereged\HBTS--isalka\hbts-backend\node_modules\node-cron\dist\esm\scheduler\runner.js:70:44)
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+[expirePendingBookings] tick 2026-02-03T11:29:00.016Z
+expirePendingBookingsJob error: Error: SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a string
+    at C:\Users\thise\Downloads\mereged\HBTS--isalka\hbts-backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async expirePendingBookingsOnce (file:///C:/Users/thise/Downloads/mereged/HBTS--isalka/hbts-backend/src/jobs/expirePendingBookings.job.js:10:18)
+    at async file:///C:/Users/thise/Downloads/mereged/HBTS--isalka/hbts-backend/src/jobs/expirePendingBookings.job.js:40:7
+    at async Timeout._onTimeout (C:\Users\thise\Downloads\mereged\HBTS--isalka\hbts-backend\node_modules\node-cron\dist\esm\scheduler\runner.js:70:44)
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+[expirePendingBookings] tick 2026-02-03T11:30:00.030Z
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+expirePendingBookingsJob error: Error: SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a string
+    at C:\Users\thise\Downloads\mereged\HBTS--isalka\hbts-backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async expirePendingBookingsOnce (file:///C:/Users/thise/Downloads/mereged/HBTS--isalka/hbts-backend/src/jobs/expirePendingBookings.job.js:10:18)
+    at async file:///C:/Users/thise/Downloads/mereged/HBTS--isalka/hbts-backend/src/jobs/expirePendingBookings.job.js:40:7
+    at async Timeout._onTimeout (C:\Users\thise\Downloads\mereged\HBTS--isalka\hbts-backend\node_modules\node-cron\dist\esm\scheduler\runner.js:70:44)
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
+JWT verification failed: JsonWebTokenError secret or public key must be provided
