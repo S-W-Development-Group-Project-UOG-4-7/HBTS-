@@ -5,6 +5,8 @@ class Seat {
   final int seatCol;
   final String seatType;
   final bool isBooked;
+  final double? layoutX;
+  final double? layoutY;
 
   Seat({
     required this.seatId,
@@ -13,6 +15,8 @@ class Seat {
     required this.seatCol,
     required this.seatType,
     required this.isBooked,
+    this.layoutX,
+    this.layoutY,
   });
 
   factory Seat.fromJson(Map<String, dynamic> j) {
@@ -23,6 +27,8 @@ class Seat {
       seatCol: (j["seat_col"] as num).toInt(),
       seatType: (j["seat_type"] ?? "normal") as String,
       isBooked: (j["is_booked"] ?? false) as bool,
+      layoutX: j["layout_x"] != null ? (j["layout_x"] as num).toDouble() : null,
+      layoutY: j["layout_y"] != null ? (j["layout_y"] as num).toDouble() : null,
     );
   }
 }

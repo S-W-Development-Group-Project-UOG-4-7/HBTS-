@@ -4,6 +4,7 @@ import '../api/seat_api.dart';
 import '../models/my_booking_item.dart';
 import '../models/seat_model.dart';
 import '../models/trip_model.dart';
+import 'booking_qr_page.dart';
 import 'edit_seat_page.dart';
 
 class BookingDetailsPage extends StatefulWidget {
@@ -20,10 +21,12 @@ class _BookingDetailsPageState extends State<BookingDetailsPage> {
 
   late int _seatId;
   late String _seatLabel;
+  late MyBookingItem _b;
 
   @override
   void initState() {
     super.initState();
+    _b = widget.item;
     _seatId = widget.item.seatId;
     _seatLabel = widget.item.seatLabel;
     _loadSeats();
@@ -74,7 +77,7 @@ class _BookingDetailsPageState extends State<BookingDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final b = widget.item;
+    final b = _b;
     final trip = _tripFromItem(b);
 
     return Scaffold(
@@ -85,6 +88,8 @@ class _BookingDetailsPageState extends State<BookingDetailsPage> {
           Text(b.routeText, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 6),
           Text("Seat: $_seatLabel"),
+          const SizedBox(height: 6),
+          Text("Boarding: ${b.boardingStopName.isNotEmpty ? b.boardingStopName : b.boardingStopId}"),
           const SizedBox(height: 6),
           Text("Departure: ${b.departureTime}"),
           const SizedBox(height: 16),
@@ -101,7 +106,103 @@ class _BookingDetailsPageState extends State<BookingDetailsPage> {
 
           const SizedBox(height: 16),
 
+          if ((b.qrCode ?? "").trim().isNotEmpty) ...[
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.qr_code),
+                label: const Text("Show QR"),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BookingQrPage(qrText: b.qrCode!.trim()),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+
           if (_canEdit) ...[
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.place),
+                label: const Text("Change Boarding Stop"),
+                onPressed: () async {
+                  try {
+                    final stops = await BookingApi.getChangeableBoardingStops(
+                      bookingId: b.bookingId,
+                    );
+
+                    if (!mounted) return;
+
+                    if (stops.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("No boarding stops available to change right now."),
+                        ),
+                      );
+                      return;
+                    }
+
+                    final pickedStopId = await showModalBottomSheet<int>(
+                      context: context,
+                      builder: (_) => ListView(
+                        children: [
+                          const ListTile(
+                            title: Text(
+                              "Select Boarding Stop",
+                              style: TextStyle(fontWeight: FontWeight.w900),
+                            ),
+                          ),
+                          const Divider(height: 1),
+                          ...stops.map((s) {
+                            final id = (s["stop_id"] as num).toInt();
+                            final name = (s["stop_name"] ?? "Stop $id").toString();
+                            return ListTile(
+                              title: Text(name),
+                              subtitle: Text("Stop ID: $id"),
+                              onTap: () => Navigator.pop(context, id),
+                            );
+                          }),
+                        ],
+                      ),
+                    );
+
+                    if (pickedStopId == null) return;
+
+                    await BookingApi.changeBoardingStop(
+                      bookingId: b.bookingId,
+                      boardingStopId: pickedStopId,
+                    );
+
+                    final all = await BookingApi.getMyBookings();
+                    final updated =
+                        all.firstWhere((x) => x.bookingId == _b.bookingId, orElse: () => _b);
+                    if (!mounted) return;
+                    setState(() => _b = updated);
+
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Boarding stop updated")),
+                    );
+
+                    // optional: pop & refresh bookings list OR update UI if you store stop name locally
+                  } catch (e) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Change boarding stop failed: $e")),
+                    );
+                  }
+                },
+              ),
+            ),
+            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               height: 54,
@@ -200,10 +301,26 @@ class SeatMapFromSeats extends StatelessWidget {
 
   const SeatMapFromSeats({super.key, required this.seats, required this.mySeatId});
 
+  bool get _hasRealLayout {
+    if (seats.isEmpty) return false;
+    final withLayout = seats.where((s) => s.layoutX != null && s.layoutY != null).length;
+    return withLayout >= (seats.length * 0.7); // 70% rule
+  }
+
   @override
   Widget build(BuildContext context) {
     if (seats.isEmpty) {
       return const Text("No seats.");
+    }
+
+    if (_hasRealLayout) {
+      return SizedBox(
+        height: 520,
+        child: _buildSeatLayout(
+          seats: seats,
+          isMine: (s) => s.seatId == mySeatId,
+        ),
+      );
     }
 
     final maxRow = seats.map((s) => s.seatRow).reduce((a, b) => a > b ? a : b);
@@ -239,34 +356,77 @@ class SeatMapFromSeats extends StatelessWidget {
         }
 
         final isMine = seat.seatId == mySeatId;
-        final booked = seat.isBooked;
+        return _SeatTile(seat: seat, isMine: isMine);
+      },
+    );
+  }
+}
 
-        Color bg;
-        if (isMine) {
-          bg = Colors.blue.shade700;
-        } else if (booked) {
-          bg = Colors.red.shade300;
-        } else {
-          bg = Colors.grey.shade200;
-        }
 
-        return Container(
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.black12),
-          ),
-          child: Center(
-            child: Text(
-              seat.seatLabel,
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                color: (isMine || booked) ? Colors.white : Colors.black87,
+Widget _buildSeatLayout({
+  required List<Seat> seats,
+  required bool Function(Seat) isMine,
+}) {
+  final visibleSeats = seats.where((s) => s.layoutX != null && s.layoutY != null).toList();
+
+  return LayoutBuilder(
+    builder: (_, constraints) {
+      final w = constraints.maxWidth;
+      final h = constraints.maxHeight;
+
+      return Stack(
+        children: [
+          for (final seat in visibleSeats)
+            Positioned(
+              left: (seat.layoutX! / 100) * w,
+              top: (seat.layoutY! / 100) * h,
+              child: _SeatTile(
+                seat: seat,
+                isMine: isMine(seat),
               ),
             ),
+        ],
+      );
+    },
+  );
+}
+
+class _SeatTile extends StatelessWidget {
+  final Seat seat;
+  final bool isMine;
+
+  const _SeatTile({required this.seat, required this.isMine});
+
+  @override
+  Widget build(BuildContext context) {
+    final booked = seat.isBooked;
+
+    Color bg;
+    if (isMine) {
+      bg = Colors.blue.shade700;
+    } else if (booked) {
+      bg = Colors.red.shade300;
+    } else {
+      bg = Colors.grey.shade200;
+    }
+
+    return Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.black12),
+      ),
+      child: Center(
+        child: Text(
+          seat.seatLabel,
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            color: (isMine || booked) ? Colors.white : Colors.black87,
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

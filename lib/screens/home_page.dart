@@ -714,6 +714,7 @@ class _UpcomingTripCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.green.shade400,
+                    border: Border.all(color: Colors.red, width: 2),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(

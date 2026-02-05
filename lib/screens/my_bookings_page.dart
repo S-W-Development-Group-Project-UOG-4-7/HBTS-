@@ -266,6 +266,7 @@ class _MiniPill extends StatelessWidget {
   }
 }
 
+
 class _StatusBadge extends StatelessWidget {
   final BookingStatusUI status;
   const _StatusBadge({required this.status});

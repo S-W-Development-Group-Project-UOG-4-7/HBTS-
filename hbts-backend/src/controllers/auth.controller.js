@@ -243,13 +243,29 @@ export async function login(req, res) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    if (!user.is_verified) {
-      return res.status(403).json({ message: "Account not verified" });
-    }
-
     const ok = await bcrypt.compare(password, user.password_hash);
     if (!ok) {
       return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    if (!user.is_verified) {
+      if (user.role === "passenger") {
+        return res.status(403).json({ message: "Account not verified" });
+      }
+
+      const autoVerifyRoles = ["admin", "operator", "conductor", "driver"];
+      if (autoVerifyRoles.includes(user.role)) {
+        await pool.query(
+          `
+          UPDATE users
+          SET is_verified = true,
+              email_verified_at = NOW(),
+              updated_at = NOW()
+          WHERE user_id = $1
+          `,
+          [user.user_id]
+        );
+      }
     }
 
     const otpData = await createOtp({

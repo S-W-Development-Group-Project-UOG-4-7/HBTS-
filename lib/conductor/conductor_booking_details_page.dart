@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 import '../services/conductor_api.dart';
 import '../state/conductor_store.dart';
 
@@ -116,7 +117,7 @@ class _ConductorBookingDetailsPageState extends State<ConductorBookingDetailsPag
                             await ConductorApi.payCash(
                               bookingId: b.bookingId,
                               tripId: tripId,
-                              clientActionId: DateTime.now().microsecondsSinceEpoch.toString(),
+                              clientActionId: const Uuid().v4(),
                             );
                             await store.loadActiveTripBookings();
                             if (!context.mounted) return;

@@ -7,12 +7,11 @@ import '../models/my_booking_item.dart';
 
 class BookingApi {
   static Future<int> createBooking({
-    required int tripId,
-    required int seatId,
-    required int boardingStopId,
-    required int droppingStopId,
-    required String paidVia, // "cash" | "online"
-  }) async {
+  required int tripId,
+  required int seatId,
+  int? boardingStopId,        // ✅ optional (skip allowed)
+  required String paidVia,
+}) async {
     final token = await TokenStore.getAccessToken();
     if (token == null || token.isEmpty) {
       throw Exception("Not logged in (missing access token)");
@@ -28,8 +27,7 @@ class BookingApi {
       body: jsonEncode({
         "tripId": tripId,
         "seatId": seatId,
-        "boardingStopId": boardingStopId,
-        "droppingStopId": droppingStopId,
+        if (boardingStopId != null) "boardingStopId": boardingStopId,
         "paidVia": paidVia,
       }),
     );
@@ -107,6 +105,51 @@ class BookingApi {
       throw Exception("Seat update failed (${res.statusCode}): ${res.body}");
     }
   }
+
+  static Future<List<Map<String, dynamic>>> getChangeableBoardingStops({
+    required int bookingId,
+  }) async {
+    final token = await TokenStore.getAccessToken();
+    if (token == null || token.isEmpty) {
+      throw Exception("Not logged in (missing access token)");
+    }
+
+    final uri =
+        Uri.parse("${AppConfig.baseUrl}/api/bookings/$bookingId/boarding-stops");
+    final res = await http.get(uri, headers: {"Authorization": "Bearer $token"});
+
+    if (res.statusCode != 200) {
+      throw Exception("Boarding stops fetch failed (${res.statusCode}): ${res.body}");
+    }
+
+    final List data = jsonDecode(res.body) as List;
+    return data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  static Future<void> changeBoardingStop({
+    required int bookingId,
+    required int boardingStopId,
+  }) async {
+    final token = await TokenStore.getAccessToken();
+    if (token == null || token.isEmpty) {
+      throw Exception("Not logged in (missing access token)");
+    }
+
+    final uri = Uri.parse("${AppConfig.baseUrl}/api/bookings/$bookingId/boarding-stop");
+    final res = await http.patch(
+      uri,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({"boardingStopId": boardingStopId}),
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception("Boarding stop update failed (${res.statusCode}): ${res.body}");
+    }
+  }
+
 
   static Future<void> cancelBooking({
     required int bookingId,

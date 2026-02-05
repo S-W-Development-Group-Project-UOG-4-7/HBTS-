@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 import '../services/conductor_api.dart';
 import '../state/conductor_store.dart';
@@ -302,7 +303,7 @@ class _ConductorScanPageState extends State<ConductorScanPage> {
   }) async {
     try {
       // offline-safe idempotency
-      final clientActionId = DateTime.now().microsecondsSinceEpoch.toString();
+      final clientActionId = const Uuid().v4();
 
       final res = await ConductorApi.scanCommit(
         qr: qr,

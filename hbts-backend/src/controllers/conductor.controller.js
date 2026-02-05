@@ -34,11 +34,11 @@ function parseQr(qrRaw) {
   const trimmed = qrRaw.trim();
   if (!trimmed) return { ok: false, error: "QR is empty" };
 
-  // JSON QR: {"bookingId":123,"tripId":456}
+  // JSON QR: {"bookingId":123,"tripId":456} or {"bid":123,"sig":"..."}
   if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
     try {
       const obj = JSON.parse(trimmed);
-      const bookingId = Number(obj.bookingId ?? obj.booking_id);
+      const bookingId = Number(obj.bookingId ?? obj.booking_id ?? obj.bid);
       const tripId = obj.tripId != null ? Number(obj.tripId ?? obj.trip_id) : null;
 
       if (!Number.isFinite(bookingId)) return { ok: false, error: "Invalid bookingId in QR JSON" };
@@ -103,6 +103,7 @@ async function mustGetBookingForConductor(client, { bookingId, userId, tripIdHin
       b.boarded_at,
       b.boarded_by,
 
+      b.qr_code,
       b.qr_scanned_at,
       b.last_scanned_by,
       b.verification_source,
@@ -287,7 +288,11 @@ export async function getTripBookings(req, res) {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit || "30", 10)));
     const offset = (page - 1) * limit;
 
-    const where = [`b.trip_id = $1`, `t.deleted_at IS NULL`];
+    const where = [
+      `b.trip_id = $1`,
+      `t.deleted_at IS NULL`,
+      `b.status <> 'cancelled'::booking_status`,
+    ];
     const params = [tripId];
     let idx = 1;
 
@@ -351,12 +356,13 @@ export async function getTripBookings(req, res) {
         b.paid_at,
         b.paid_by,
 
-        b.boarded_at,
-        b.boarded_by,
+      b.boarded_at,
+      b.boarded_by,
 
-        b.qr_scanned_at,
-        b.last_scanned_by,
-        b.verification_source
+      b.qr_code,
+      b.qr_scanned_at,
+      b.last_scanned_by,
+      b.verification_source
 
       FROM bookings b
       JOIN trips t ON t.trip_id = b.trip_id
@@ -482,6 +488,7 @@ export async function verifyScan(req, res) {
         paid_by: b.paid_by ?? null,
         boarded_at: b.boarded_at ?? null,
         boarded_by: b.boarded_by ?? null,
+        qr_code: b.qr_code ?? null,
         qr_scanned_at: b.qr_scanned_at ?? null,
       },
       flags: {

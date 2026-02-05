@@ -20,17 +20,14 @@ void main() {
         ChangeNotifierProvider(
           create: (_) => NotificationStore()..refresh(),
         ),
-
-        // ✅ NEW: Conductor Home state
+        // NEW: Conductor Home state
         ChangeNotifierProvider(
           create: (_) => ConductorStore(),
         ),
-
-        // ✅ NEW: Active Trip state (bookings, filters, counters)
+        // NEW: Active Trip state (bookings, filters, counters)
         ChangeNotifierProvider(
           create: (_) => ActiveTripStore(),
         ),
-
         Provider(
           create: (_) => RealtimeWsService(),
           dispose: (_, ws) => ws.dispose(),
@@ -58,6 +55,51 @@ class _HBTSAppState extends State<HBTSApp> {
     if (_wired) return;
     _wired = true;
 
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final store = context.read<NotificationStore>();
+
+      // Start websocket realtime after first frame
+      store.startRealtime();
+      store.startPolling(interval: const Duration(seconds: 3));
+
+      // Listen for popup events
+      _sub = store.incomingStream.listen((n) {
+        final ctx = navigatorKey.currentContext;
+        if (ctx == null) return;
+
+        InAppNotificationBanner.show(
+          ctx,
+          title: n.title,
+          message: n.message,
+          onTap: () => Navigator.pushNamed(ctx, AppRoutes.notifications),
+        );
+      });
+
+      final ws = context.read<RealtimeWsService>();
+      final activeTripStore = context.read<ActiveTripStore>();
+
+      final role = await TokenStore.getRole();
+      if (role == "conductor") {
+        await ws.connect();
+
+        ws.events.listen((ev) async {
+          if (ev.isTripStarted) {
+            // Refresh so active trip card appears + bookings load
+            await activeTripStore.loadActiveTripAndBookings();
+            return;
+          }
+
+          if (ev.isTripEnded) {
+            activeTripStore.requestTripClosedDialog(reason: "ended");
+            return;
+          }
+
+          if (ev.isTripCancelled) {
+            activeTripStore.requestTripClosedDialog(reason: "cancelled");
+            return;
+          }
+        });
+      }
     final store = context.read<NotificationStore>();
 
     // ✅ start websocket realtime after first frame

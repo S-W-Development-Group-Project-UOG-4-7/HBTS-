@@ -27,6 +27,12 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
 
   int get _maxSelect => widget.args.passengers;
 
+  bool get _hasRealLayout {
+    if (_seats.isEmpty) return false;
+    final withLayout = _seats.where((s) => s.layoutX != null && s.layoutY != null).length;
+    return withLayout >= (_seats.length * 0.7); // 70% rule
+  }
+
   @override
   void initState() {
     super.initState();
@@ -117,50 +123,16 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
                       )
                     : Padding(
                         padding: const EdgeInsets.all(16),
-                        child: GridView.builder(
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: maxCol == 0 ? 4 : maxCol,
-                            mainAxisSpacing: 10,
-                            crossAxisSpacing: 10,
-                            childAspectRatio: 1.2,
-                          ),
-                          itemCount: _seats.length,
-                          itemBuilder: (context, i) {
-                            final seat = _seats[i];
-                            final booked = seat.isBooked;
-                            final selected = _selectedSeatIds.contains(seat.seatId);
-
-                            Color bg;
-                            if (booked) {
-                              bg = Colors.red.shade300;
-                            } else if (selected) {
-                              bg = Colors.blue.shade700;
-                            } else {
-                              bg = Colors.grey.shade200;
-                            }
-
-                            return InkWell(
-                              onTap: () => _toggle(seat),
-                              borderRadius: BorderRadius.circular(14),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: bg,
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: Colors.black12),
+                        child: _hasRealLayout
+                            ? SizedBox(
+                                height: 520,
+                                child: _buildSeatLayout(
+                                  seats: _seats,
+                                  onTap: _toggle,
+                                  isSelected: (s) => _selectedSeatIds.contains(s.seatId),
                                 ),
-                                child: Center(
-                                  child: Text(
-                                    seat.seatLabel,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                      color: booked || selected ? Colors.white : Colors.black87,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+                              )
+                            : _buildGridFallback(),
                       ),
           ),
           SafeArea(
@@ -210,6 +182,55 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
       ),
     );
   }
+
+  Widget _buildGridFallback() {
+    final maxCol = _seats.isEmpty ? 0 : _seats.map((s) => s.seatCol).reduce((a, b) => a > b ? a : b);
+
+    return GridView.builder(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: maxCol == 0 ? 4 : maxCol,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childAspectRatio: 1.2,
+      ),
+      itemCount: _seats.length,
+      itemBuilder: (context, i) {
+        final seat = _seats[i];
+        final booked = seat.isBooked;
+        final selected = _selectedSeatIds.contains(seat.seatId);
+
+        Color bg;
+        if (booked) {
+          bg = Colors.red.shade300;
+        } else if (selected) {
+          bg = Colors.blue.shade700;
+        } else {
+          bg = Colors.grey.shade200;
+        }
+
+        return InkWell(
+          onTap: () => _toggle(seat),
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.black12),
+            ),
+            child: Center(
+              child: Text(
+                seat.seatLabel,
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  color: booked || selected ? Colors.white : Colors.black87,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _Legend extends StatelessWidget {
@@ -225,6 +246,86 @@ class _Legend extends StatelessWidget {
         const SizedBox(width: 6),
         Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
       ],
+    );
+  }
+
+}
+
+Widget _buildSeatLayout({
+  required List<Seat> seats,
+  required void Function(Seat) onTap,
+  required bool Function(Seat) isSelected,
+}) {
+  final visibleSeats = seats.where((s) => s.layoutX != null && s.layoutY != null).toList();
+
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      final w = constraints.maxWidth;
+      final h = constraints.maxHeight;
+
+      return Stack(
+        children: [
+          for (final seat in visibleSeats)
+            Positioned(
+              left: (seat.layoutX! / 100) * w,
+              top: (seat.layoutY! / 100) * h,
+              child: _SeatTile(
+                seat: seat,
+                selected: isSelected(seat),
+                onTap: () => onTap(seat),
+              ),
+            ),
+        ],
+      );
+    },
+  );
+}
+
+class _SeatTile extends StatelessWidget {
+  final Seat seat;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _SeatTile({
+    required this.seat,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final booked = seat.isBooked;
+
+    Color bg;
+    if (booked) {
+      bg = Colors.red.shade300;
+    } else if (selected) {
+      bg = Colors.blue.shade700;
+    } else {
+      bg = Colors.grey.shade200;
+    }
+
+    return InkWell(
+      onTap: booked ? null : onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.black12),
+        ),
+        child: Center(
+          child: Text(
+            seat.seatLabel,
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              color: booked || selected ? Colors.white : Colors.black87,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -15,6 +15,9 @@ import 'screens/my_bookings_page.dart';
 import 'screens/notifications_page.dart';
 import 'screens/profile_page.dart';
 import 'screens/schedule_page.dart';
+import 'screens/my_bookings_page.dart';
+import 'screens/track_my_booking_page.dart';
+import 'screens/track_my_booking_list_page.dart';
 import 'screens/seat_selection_page.dart';
 import 'screens/track_bus_page.dart';
 import 'screens/track_my_booking_page.dart';
@@ -106,7 +109,7 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const NotificationsPage());
 
       case trackMyBooking:
-        return MaterialPageRoute(builder: (_) => const TrackMyBookingPage());
+        return MaterialPageRoute(builder: (_) => const TrackMyBookingListPage());
 
       case trackBus:
         return MaterialPageRoute(builder: (_) => const TrackBusPage());
