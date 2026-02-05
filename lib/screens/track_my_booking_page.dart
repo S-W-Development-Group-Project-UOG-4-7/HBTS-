@@ -1,20 +1,21 @@
 import 'dart:async';
-import 'dart:math' as math;
-import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:flutter_polyline_points/flutter_polyline_points.dart';
-
-import '../services/booking_api.dart';
-import '../services/tracking_socket_service.dart';
-import '../config.dart';
-import '../services/token_store.dart';
 import 'dart:convert';
+import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
+
+import '../config.dart';
+import '../services/booking_api.dart';
+import '../services/token_store.dart';
+import '../services/tracking_socket_service.dart';
 
 class TrackMyBookingPage extends StatefulWidget {
   final int? bookingId;
 
-  const TrackMyBookingPage({Key? key, this.bookingId}) : super(key: key);
+  const TrackMyBookingPage({super.key, this.bookingId});
 
   @override
   State<TrackMyBookingPage> createState() => _TrackMyBookingPageState();
@@ -323,7 +324,7 @@ class _TrackMyBookingPageState extends State<TrackMyBookingPage> {
       await _socket.connect();
       _socket.subscribe(tripId: tripId, bookingId: widget.bookingId!);
 
-      // 3) Listen for live updates (NO refresh needed)
+      // 3) Listen for live updates (no refresh needed)
       await _sub?.cancel();
       _sub = _socket.stream().listen((msg) {
         if (!mounted) return;
@@ -534,7 +535,7 @@ class _TrackMyBookingPageState extends State<TrackMyBookingPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Booking ID: ${widget.bookingId}   ?   Trip ID: ${_tripId ?? '-'}",
+                              "Booking ID: ${widget.bookingId} | Trip ID: ${_tripId ?? '-'}",
                               style: const TextStyle(fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(height: 8),

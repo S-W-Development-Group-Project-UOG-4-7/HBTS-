@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import '../services/auth_api.dart';
-import '../services/token_store.dart';
-import '../app_routes.dart';
-import '/admin/dashboard.dart';
 import 'package:flutter/services.dart';
 
+import '/admin/dashboard.dart';
+import '../app_routes.dart';
+import '../services/auth_api.dart';
+import '../services/token_store.dart';
 
-/// OTP flow types
+// OTP flow types
 enum OtpFlow {
-  signupVerify,      // Passenger signup OTP
-  login2fa,          // ✅ Unified login OTP (all roles)
+  signupVerify, // Passenger signup OTP
+  login2fa, // Unified login OTP (all roles)
 }
 
 class OtpScreen extends StatefulWidget {
@@ -53,17 +53,15 @@ class _OtpScreenState extends State<OtpScreen> {
     try {
       Map<String, dynamic> result;
 
-      // =======================
-      // OTP VERIFICATION LOGIC
-      // =======================
+      // OTP verification logic
       if (widget.flow == OtpFlow.signupVerify) {
-        // Passenger signup OTP (unchanged)
+        // Passenger signup OTP
         result = await AuthApi.verifySignupOtp(
           challengeId: widget.challengeId,
           otp: otp,
         );
       } else {
-        // ✅ Unified login OTP (all roles)
+        // Unified login OTP (all roles)
         if (widget.tempToken == null) {
           throw Exception("Session expired. Please login again.");
         }
@@ -75,9 +73,7 @@ class _OtpScreenState extends State<OtpScreen> {
         );
       }
 
-      // =======================
-      // SAVE TOKENS + ROLE
-      // =======================
+      // Save tokens + role
       final accessToken = result["accessToken"] as String?;
       final refreshToken = result["refreshToken"] as String?;
       final roleRaw = result["role"];
@@ -86,10 +82,9 @@ class _OtpScreenState extends State<OtpScreen> {
         throw Exception("Invalid authentication response");
       }
 
-      // ✅ Show token in console + dialog for easy Postman use
-printLong("ACCESS TOKEN => $accessToken");
-await showTokenDialog(accessToken);
-
+      // Show token in console + dialog for easy Postman use
+      printLong("ACCESS TOKEN => $accessToken");
+      await showTokenDialog(accessToken);
 
       final role = roleRaw.toString().toLowerCase();
 
@@ -108,9 +103,7 @@ await showTokenDialog(accessToken);
 
       if (!mounted) return;
 
-      // =======================
-      // ROLE-BASED NAVIGATION
-      // =======================
+      // Role-based navigation
       if (role == "conductor") {
         Navigator.pushNamedAndRemoveUntil(
           context,
@@ -147,42 +140,42 @@ await showTokenDialog(accessToken);
   }
 
   void printLong(String text) {
-  const chunkSize = 800;
-  for (var i = 0; i < text.length; i += chunkSize) {
-    final end = (i + chunkSize > text.length) ? text.length : i + chunkSize;
-    // ignore: avoid_print
-    print(text.substring(i, end));
+    const chunkSize = 800;
+    for (var i = 0; i < text.length; i += chunkSize) {
+      final end = (i + chunkSize > text.length) ? text.length : i + chunkSize;
+      // ignore: avoid_print
+      print(text.substring(i, end));
+    }
   }
-}
 
-Future<void> showTokenDialog(String token) async {
-  if (!mounted) return;
+  Future<void> showTokenDialog(String token) async {
+    if (!mounted) return;
 
-  await showDialog(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: const Text('Access Token (copy for Postman)'),
-      content: SingleChildScrollView(child: SelectableText(token)),
-      actions: [
-        TextButton(
-          onPressed: () async {
-            await Clipboard.setData(ClipboardData(text: token));
-            if (mounted) Navigator.pop(context);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Token copied to clipboard')),
-            );
-          },
-          child: const Text('Copy'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
-        ),
-      ],
-    ),
-  );
-}
-
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Access Token (copy for Postman)'),
+        content: SingleChildScrollView(child: SelectableText(token)),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: token));
+              if (!mounted) return;
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Token copied to clipboard')),
+              );
+            },
+            child: const Text('Copy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -235,8 +228,7 @@ Future<void> showTokenDialog(String token) async {
                     decoration: InputDecoration(
                       labelText: "OTP",
                       hintText: "123456",
-                      prefixIcon: Icon(Icons.lock_outline,
-                          color: Colors.blue.shade700),
+                      prefixIcon: Icon(Icons.lock_outline, color: Colors.blue.shade700),
                       filled: true,
                       fillColor: Colors.blue.shade50,
                       border: OutlineInputBorder(

@@ -97,7 +97,7 @@ class _ConfirmBookingPageState extends State<ConfirmBookingPage> {
                   const SizedBox(height: 12),
 
                   DropdownButtonFormField<String>(
-                    value: paidVia,
+                    initialValue: paidVia,
                     decoration: const InputDecoration(
                       labelText: "Payment method",
                       border: OutlineInputBorder(),

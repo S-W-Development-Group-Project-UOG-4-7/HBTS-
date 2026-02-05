@@ -1,0 +1,57 @@
+C:\Users\thise\Downloads\mereged\repo\hbts-backend\node_modules\pg-pool\index.js:45
+    Error.captureStackTrace(err)
+          ^
+
+error: password authentication failed for user "postgres"
+    at C:\Users\thise\Downloads\mereged\repo\hbts-backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ensurePaymentsTable (file:///C:/Users/thise/Downloads/mereged/repo/hbts-backend/src/services/payment.service.js:37:3) {
+  length: 104,
+  severity: 'FATAL',
+  code: '28P01',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'auth.c',
+  line: '324',
+  routine: 'auth_failed'
+}
+
+Node.js v24.12.0
+C:\Users\thise\Downloads\mereged\repo\hbts-backend\node_modules\pg-pool\index.js:45
+    Error.captureStackTrace(err)
+          ^
+
+error: password authentication failed for user "postgres"
+    at C:\Users\thise\Downloads\mereged\repo\hbts-backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ensurePaymentsTable (file:///C:/Users/thise/Downloads/mereged/repo/hbts-backend/src/services/payment.service.js:37:3) {
+  length: 104,
+  severity: 'FATAL',
+  code: '28P01',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'auth.c',
+  line: '324',
+  routine: 'auth_failed'
+}
+
+Node.js v24.12.0
+^C

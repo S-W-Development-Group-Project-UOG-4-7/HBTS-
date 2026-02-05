@@ -1,13 +1,13 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
 
+import '../config.dart';
 import 'token_store.dart';
 
 class AdminApi {
-  // 🌐 Backend base URL
-  //static const String baseUrl = "http://localhost:4000";
-  // Android emulator:
-   static const String baseUrl = "http://10.0.2.2:4000";
+  // Backend base URL
+  static String get baseUrl => AppConfig.baseUrl;
 
   // =======================
   // AUTH HEADERS
@@ -93,8 +93,7 @@ class AdminApi {
   static Future<List<dynamic>> fetchPassengerBookings(
     int userId,
   ) async {
-    final uri =
-        Uri.parse("$baseUrl/api/admin/passengers/$userId/bookings");
+    final uri = Uri.parse("$baseUrl/api/admin/passengers/$userId/bookings");
 
     final res = await http.get(uri, headers: await _headers());
 

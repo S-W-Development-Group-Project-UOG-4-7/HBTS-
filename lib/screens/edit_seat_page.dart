@@ -69,14 +69,16 @@ class _EditSeatPageState extends State<EditSeatPage> {
         return s;
       }).toList();
 
+      if (!mounted) return;
       setState(() => _seats = updated);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("Seat load failed: $e")));
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Seat load failed: $e")));
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -185,6 +187,53 @@ class _EditSeatPageState extends State<EditSeatPage> {
                                   seats: _seats,
                                   onTap: _select,
                                   isSelected: (s) => _selectedSeatId == s.seatId,
+                        child: GridView.builder(
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: cols,
+                            mainAxisSpacing: 10,
+                            crossAxisSpacing: 10,
+                            childAspectRatio: 1.2,
+                          ),
+                          itemCount: totalCells,
+                          itemBuilder: (context, index) {
+                            // ✅ 1-based mapping
+                            final r = (index ~/ cols) + 1;
+                            final c = (index % cols) + 1;
+
+                            final seat = seatByPos["$r:$c"];
+                            if (seat == null || seat.seatType == "aisle") {
+                              return const SizedBox.shrink();
+                            }
+
+                            final booked = seat.isBooked;
+                            final selected = _selectedSeatId == seat.seatId;
+
+                            Color bg;
+                            if (booked) {
+                              bg = Colors.red.shade300;
+                            } else if (selected) {
+                              bg = Colors.blue.shade700;
+                            } else {
+                              bg = Colors.grey.shade200;
+                            }
+
+                            return InkWell(
+                              onTap: () => _select(seat),
+                              borderRadius: BorderRadius.circular(14),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: bg,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: Colors.black12),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    seat.seatLabel,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      color: booked || selected ? Colors.white : Colors.black87,
+                                    ),
+                                  ),
                                 ),
                               )
                             : _buildGridFallback(

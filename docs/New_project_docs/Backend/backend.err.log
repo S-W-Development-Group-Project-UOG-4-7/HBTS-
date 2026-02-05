@@ -1,0 +1,8 @@
+Error fetching driver trips: Error: read ECONNRESET
+    at C:\Users\thise\Downloads\New\New\Backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async exports.getDriverTrips (C:\Users\thise\Downloads\New\New\Backend\controllers\driverController.js:28:20) {
+  errno: -4077,
+  code: 'ECONNRESET',
+  syscall: 'read'
+}

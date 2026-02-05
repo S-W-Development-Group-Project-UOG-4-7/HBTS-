@@ -1,0 +1,29 @@
+[33md1c21ba[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mpasindu[m[33m, [m[1;31morigin/pasindu[m[33m)[m Merge branch 'develop' into pasindu
+[33m56dc670[m[33m ([m[1;31morigin/pasindu-snapshot[m[33m, [m[1;32mpasindu-snapshot[m[33m)[m Implement shcedule searching and booking flow with seat maps
+[33mfb8e914[m Commit
+[33medff90d[m[33m ([m[1;31morigin/isalka[m[33m, [m[1;32misalka[m[33m)[m Fix auth flow, OTP navigation, and home page loading
+[33m87065ed[m[33m ([m[1;32mbackup/pasindu-polluted[m[33m)[m Update token_store.dart
+[33mc79f183[m Created the passenger home page with proper otp verification
+[33m9ab0437[m Commit
+[33mf515f86[m Commit
+[33m3ac8309[m Merge remote-tracking branch 'origin/thiseni' into minanga
+[33m8b02d02[m Commit
+[33mbe9774a[m Resolve merge conflicts and merge develop into thiseni
+[33m30870cd[m Commit
+[33m783eb62[m Resolve README merge conflict
+[33m29e00ac[m Add driver login, dashboard and trips screens
+[33m022fc78[m Commit
+[33m70e86b5[m Merge pull request #3 from S-W-Development-Group-Project-UOG-4-7/pasindu
+[33ma182fcf[m Complete auth flow: Flutter login/signup + OTP screens, backend returns tokens on signup verify
+[33mefa46a5[m Complete authentication flow with OTP (Flutter + Backend)
+[33m75fc420[m Setup backend auth with OTP + JWT and Neon DB support
+[33m328f1ce[m Merge pull request #2 from S-W-Development-Group-Project-UOG-4-7/pasindu
+[33m8fe9bf6[m Fix project structure: remove nested Flutter project (HBTS-\\mobile)
+[33m552ac50[m :wq :wq Merge branch 'minanga' of github.com:S-W-Development-Group-Project-UOG-4-7/HBTS- into minanga
+[33m6f073aa[m Commit
+[33m06b7ea5[m[33m ([m[1;32mminanga[m[33m)[m commit
+[33m68f9889[m Fix app entry point and screen imports
+[33m19d59ee[m Commit
+[33m3dafda4[m Commit
+[33m8f39318[m Add login and signup UI screens
+[33m09af784[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Initial commit

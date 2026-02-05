@@ -36,14 +36,16 @@ class _BookingDetailsPageState extends State<BookingDetailsPage> {
     setState(() => _loadingSeats = true);
     try {
       final data = await SeatApi.getTripSeats(widget.item.tripId);
+      if (!mounted) return;
       setState(() => _seats = data);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("Seat load failed: $e")));
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Seat load failed: $e")));
     } finally {
-      if (mounted) setState(() => _loadingSeats = false);
+      if (mounted) {
+        setState(() => _loadingSeats = false);
+      }
     }
   }
 
@@ -227,6 +229,7 @@ class _BookingDetailsPageState extends State<BookingDetailsPage> {
 
                   try {
                     await BookingApi.changeSeat(bookingId: b.bookingId, seatId: newSeatId);
+                    if (!context.mounted) return;
 
                     final newSeat = _seats.firstWhere((s) => s.seatId == newSeatId);
                     setState(() {
@@ -234,18 +237,15 @@ class _BookingDetailsPageState extends State<BookingDetailsPage> {
                       _seatLabel = newSeat.seatLabel;
                     });
 
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Seat updated")),
-                      );
-                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Seat updated")),
+                    );
                     await _loadSeats();
                   } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Seat update failed: $e")),
-                      );
-                    }
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Seat update failed: $e")),
+                    );
                   }
                 },
               ),
@@ -274,18 +274,16 @@ class _BookingDetailsPageState extends State<BookingDetailsPage> {
 
                   try {
                     await BookingApi.cancelBooking(bookingId: b.bookingId);
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Booking cancelled")),
-                      );
-                      Navigator.pop(context);
-                    }
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Booking cancelled")),
+                    );
+                    Navigator.pop(context);
                   } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Cancel failed: $e")),
-                      );
-                    }
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Cancel failed: $e")),
+                    );
                   }
                 },
               ),
@@ -311,7 +309,9 @@ class SeatMapFromSeats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (seats.isEmpty) return const Text("No seats.");
+    if (seats.isEmpty) {
+      return const Text("No seats.");
+    }
 
     if (_hasRealLayout) {
       return SizedBox(
@@ -351,7 +351,9 @@ class SeatMapFromSeats extends StatelessWidget {
         final c = (index % cols) + 1;
 
         final seat = seatByPos["$r:$c"];
-        if (seat == null || seat.seatType == "aisle") return const SizedBox.shrink();
+        if (seat == null || seat.seatType == "aisle") {
+          return const SizedBox.shrink();
+        }
 
         final isMine = seat.seatId == mySeatId;
         return _SeatTile(seat: seat, isMine: isMine);
@@ -428,3 +430,4 @@ class _SeatTile extends StatelessWidget {
     );
   }
 }
+

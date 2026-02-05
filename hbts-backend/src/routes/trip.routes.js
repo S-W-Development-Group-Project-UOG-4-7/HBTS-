@@ -32,7 +32,5 @@ router.post("/:id/location", requireAuth, pushTripLocation);
 router.post("/:id/start", requireAuth, requireRole(["driver", "admin", "operator"]), startTrip);
 router.post("/:id/end", requireAuth, requireRole(["driver", "admin", "operator"]), endTrip);
 router.post("/:id/cancel", requireAuth, requireRole(["driver", "admin", "operator"]), cancelTrip);
-router.post("/:id/location", requireAuth, pushTripLocation);
-
 
 export default router;

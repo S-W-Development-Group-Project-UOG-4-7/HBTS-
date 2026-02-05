@@ -5,6 +5,8 @@ class DriverLoginPage extends StatelessWidget {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
+  DriverLoginPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,7 +38,7 @@ class DriverLoginPage extends StatelessWidget {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => DriverDashboard(),
+                    builder: (context) => const DriverDashboard(),
                   ),
                 );
               },

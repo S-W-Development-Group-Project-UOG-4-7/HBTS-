@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../app_routes.dart';
-import '../../state/conductor_store.dart';
+import '../app_routes.dart';
+import '../state/conductor_store.dart';
 
 class ConductorHomePage extends StatefulWidget {
   const ConductorHomePage({super.key});
@@ -14,7 +14,6 @@ class ConductorHomePage extends StatefulWidget {
 class _ConductorHomePageState extends State<ConductorHomePage> {
   // palette (from your spec)
   static const _primary = Color(0xFF2563EB);
-  static const _primaryDark = Color(0xFF1E40AF);
   static const _bg = Color(0xFFF8FAFC);
   static const _surface = Colors.white;
   static const _text = Color(0xFF0F172A);
@@ -144,9 +143,9 @@ class _ConductorHomePageState extends State<ConductorHomePage> {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: _primary.withOpacity(0.10),
+              color: _primary.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: _primary.withOpacity(0.18)),
+              border: Border.all(color: _primary.withValues(alpha: 0.18)),
             ),
             child: const Icon(Icons.directions_bus_rounded, color: _primary),
           ),
@@ -194,15 +193,15 @@ class _ConductorHomePageState extends State<ConductorHomePage> {
           SizedBox(
             width: double.infinity,
             height: 46,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-              onPressed: () => Navigator.pushNamed(context, AppRoutes.conductorActiveTrip),
-              child: const Text("View Active Trip", style: TextStyle(fontWeight: FontWeight.w900)),
-            ),
+child: ElevatedButton(
+  style: ElevatedButton.styleFrom(
+    backgroundColor: _primary,
+    foregroundColor: Colors.white,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+  ),
+  onPressed: () => Navigator.pushNamed(context, AppRoutes.conductorActiveTrip ?? ''),
+  child: const Text("View Active Trip", style: TextStyle(fontWeight: FontWeight.w900)),
+),
           ),
         ],
       ),
@@ -253,15 +252,15 @@ class _ConductorHomePageState extends State<ConductorHomePage> {
             height: 44,
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
-                backgroundColor: _primary.withOpacity(0.06),
+                backgroundColor: _primary.withValues(alpha: 0.06),
                 foregroundColor: _primary,
-                side: BorderSide(color: _primary.withOpacity(0.14)),
+                side: BorderSide(color: _primary.withValues(alpha: 0.14)),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
               onPressed: () {
-                if (isRunning) {
-                  Navigator.pushNamed(context, AppRoutes.conductorActiveTrip);
-                } else {
+if (isRunning) {
+  Navigator.pushNamed(context, AppRoutes.conductorActiveTrip ?? '');
+} else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text("Trip is ${_statusLabel(status)} (details later)")),
                   );
@@ -282,7 +281,7 @@ class _ConductorHomePageState extends State<ConductorHomePage> {
         color: _surface,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: _border),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 18, offset: const Offset(0, 10))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 18, offset: const Offset(0, 10))],
       ),
       child: Padding(padding: EdgeInsets.all(padding), child: child),
     );
@@ -293,9 +292,9 @@ class _ConductorHomePageState extends State<ConductorHomePage> {
       height: 28,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.14),
+        color: color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withOpacity(0.22)),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
       ),
       child: Center(
         child: Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w900)),
@@ -307,9 +306,9 @@ class _ConductorHomePageState extends State<ConductorHomePage> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _danger.withOpacity(0.08),
+        color: _danger.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _danger.withOpacity(0.20)),
+        border: Border.all(color: _danger.withValues(alpha: 0.20)),
       ),
       child: Row(
         children: [
@@ -399,7 +398,7 @@ class _TopHeader extends StatelessWidget {
             children: [
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(greeting, style: TextStyle(color: Colors.white.withOpacity(0.90), fontWeight: FontWeight.w700, fontSize: 14)),
+                  Text(greeting, style: TextStyle(color: Colors.white.withValues(alpha: 0.90), fontWeight: FontWeight.w700, fontSize: 14)),
                   const SizedBox(height: 10),
                   const Text("Today's Schedule", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 22)),
                   const SizedBox(height: 10),
@@ -407,14 +406,14 @@ class _TopHeader extends StatelessWidget {
                     _ConnDot(connected: connected),
                     const SizedBox(width: 8),
                     Text(connected ? "Online" : "Offline",
-                        style: TextStyle(color: Colors.white.withOpacity(0.90), fontWeight: FontWeight.w800, fontSize: 12.5)),
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.90), fontWeight: FontWeight.w800, fontSize: 12.5)),
                   ]),
                 ]),
               ),
               const SizedBox(width: 12),
               CircleAvatar(
                 radius: 18,
-                backgroundColor: Colors.white.withOpacity(0.22),
+                backgroundColor: Colors.white.withValues(alpha: 0.22),
                 child: Text(initials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 12)),
               ),
             ],

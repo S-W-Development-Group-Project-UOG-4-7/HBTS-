@@ -1,0 +1,4 @@
+const { rows } = await pool.query(
+  "SELECT operator_id, name, email, password_hash FROM operators WHERE email = $1 LIMIT 1",
+  [email.trim().toLowerCase()]
+);

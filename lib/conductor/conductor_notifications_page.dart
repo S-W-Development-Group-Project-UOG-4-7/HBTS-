@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../state/notification_store.dart';
+import '../state/notification_store.dart';
 
 class ConductorNotificationsPage extends StatelessWidget {
   const ConductorNotificationsPage({super.key});

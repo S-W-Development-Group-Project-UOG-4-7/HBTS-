@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../state/conductor_store.dart';
-import '../../app_routes.dart';
+import '../state/conductor_store.dart';
+import '../app_routes.dart';
 
 class ConductorBookingsPage extends StatefulWidget {
   final int tripId;
@@ -129,7 +129,11 @@ class _ConductorBookingsPageState extends State<ConductorBookingsPage> {
             style: const TextStyle(fontWeight: FontWeight.w900)),
         subtitle: Text("${b.boardingStopName} → ${b.droppingStopName}"),
         trailing: const Icon(Icons.chevron_right_rounded),
-        onTap: () => Navigator.pushNamed(context, AppRoutes.conductorBookingDetails, arguments: {"booking": b}),
+onTap: () => Navigator.pushNamed(
+  context,
+  AppRoutes.conductorBookingDetails ?? '',
+  arguments: {"booking": b},
+),
       ),
     );
   }
