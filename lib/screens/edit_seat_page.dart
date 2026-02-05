@@ -8,7 +8,7 @@ class EditSeatArgs {
   final int currentSeatId;
   final String currentSeatLabel;
 
-  // ✅ Defaults so old calls won't break
+  // Defaults so old calls won't break
   final bool canChangeSeat;
   final String? lockReason;
 
@@ -52,7 +52,7 @@ class _EditSeatPageState extends State<EditSeatPage> {
     try {
       final data = await SeatApi.getTripSeats(widget.args.trip.id);
 
-      // allow selecting the current seat even if API marks it booked
+      // Allow selecting the current seat even if API marks it booked
       final updated = data.map((s) {
         if (s.seatId == widget.args.currentSeatId) {
           return Seat(
@@ -83,7 +83,7 @@ class _EditSeatPageState extends State<EditSeatPage> {
   }
 
   void _select(Seat seat) {
-    if (!widget.args.canChangeSeat) return; // ✅ block when locked
+    if (!widget.args.canChangeSeat) return; // Block when locked
     if (seat.isBooked) return;
     setState(() => _selectedSeatId = seat.seatId);
   }
@@ -104,7 +104,6 @@ class _EditSeatPageState extends State<EditSeatPage> {
 
     final rows = maxRow;
     final cols = maxCol == 0 ? 4 : maxCol;
-    final totalCells = rows * cols;
 
     return Scaffold(
       appBar: AppBar(
@@ -119,11 +118,15 @@ class _EditSeatPageState extends State<EditSeatPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("${t.fromLocation} → ${t.toLocation}",
-                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                Text(
+                  "${t.fromLocation} -> ${t.toLocation}",
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                ),
                 const SizedBox(height: 6),
-                Text("Current seat: ${widget.args.currentSeatLabel}",
-                    style: TextStyle(color: Colors.grey.shade700)),
+                Text(
+                  "Current seat: ${widget.args.currentSeatLabel}",
+                  style: TextStyle(color: Colors.grey.shade700),
+                ),
                 const SizedBox(height: 12),
                 if (locked) ...[
                   Container(
@@ -187,53 +190,6 @@ class _EditSeatPageState extends State<EditSeatPage> {
                                   seats: _seats,
                                   onTap: _select,
                                   isSelected: (s) => _selectedSeatId == s.seatId,
-                        child: GridView.builder(
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: cols,
-                            mainAxisSpacing: 10,
-                            crossAxisSpacing: 10,
-                            childAspectRatio: 1.2,
-                          ),
-                          itemCount: totalCells,
-                          itemBuilder: (context, index) {
-                            // ✅ 1-based mapping
-                            final r = (index ~/ cols) + 1;
-                            final c = (index % cols) + 1;
-
-                            final seat = seatByPos["$r:$c"];
-                            if (seat == null || seat.seatType == "aisle") {
-                              return const SizedBox.shrink();
-                            }
-
-                            final booked = seat.isBooked;
-                            final selected = _selectedSeatId == seat.seatId;
-
-                            Color bg;
-                            if (booked) {
-                              bg = Colors.red.shade300;
-                            } else if (selected) {
-                              bg = Colors.blue.shade700;
-                            } else {
-                              bg = Colors.grey.shade200;
-                            }
-
-                            return InkWell(
-                              onTap: () => _select(seat),
-                              borderRadius: BorderRadius.circular(14),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: bg,
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: Colors.black12),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    seat.seatLabel,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                      color: booked || selected ? Colors.white : Colors.black87,
-                                    ),
-                                  ),
                                 ),
                               )
                             : _buildGridFallback(
@@ -254,8 +210,10 @@ class _EditSeatPageState extends State<EditSeatPage> {
                   onPressed: (locked || _selectedSeatId == null)
                       ? null
                       : () => Navigator.pop(context, _selectedSeatId),
-                  child: const Text("Save Seat",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+                  child: const Text(
+                    "Save Seat",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                  ),
                 ),
               ),
             ),
@@ -281,7 +239,7 @@ class _EditSeatPageState extends State<EditSeatPage> {
       ),
       itemCount: totalCells,
       itemBuilder: (context, index) {
-        // ✅ 1-based mapping
+        // 1-based mapping
         final r = (index ~/ cols) + 1;
         final c = (index % cols) + 1;
 
@@ -292,9 +250,13 @@ class _EditSeatPageState extends State<EditSeatPage> {
         final selected = _selectedSeatId == seat.seatId;
 
         Color bg;
-        if (booked) bg = Colors.red.shade300;
-        else if (selected) bg = Colors.blue.shade700;
-        else bg = Colors.grey.shade200;
+        if (booked) {
+          bg = Colors.red.shade300;
+        } else if (selected) {
+          bg = Colors.blue.shade700;
+        } else {
+          bg = Colors.grey.shade200;
+        }
 
         return InkWell(
           onTap: () => _select(seat),
@@ -330,14 +292,16 @@ class _Legend extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(width: 18, height: 18, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(6))),
+        Container(
+          width: 18,
+          height: 18,
+          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(6)),
+        ),
         const SizedBox(width: 6),
         Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
       ],
     );
   }
-
-  
 }
 
 Widget _buildSeatLayout({

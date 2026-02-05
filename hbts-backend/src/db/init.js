@@ -8,7 +8,16 @@ const __dirname = path.dirname(__filename);
 const schemaPath = path.join(__dirname, "..", "..", "sql", "schema.sql");
 
 export async function initDatabase() {
-  const sql = await fs.readFile(schemaPath, "utf8");
+  let sql = "";
+  try {
+    sql = await fs.readFile(schemaPath, "utf8");
+  } catch (e) {
+    if (e?.code === "ENOENT") {
+      console.warn("DB init skipped: schema.sql not found at", schemaPath);
+      return;
+    }
+    throw e;
+  }
   if (!sql.trim()) return;
 
   const statements = sql

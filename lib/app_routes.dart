@@ -97,6 +97,16 @@ class AppRoutes {
         return _badRoute("Profile args missing");
 
       case schedule:
+        final args = settings.arguments;
+        if (args is ScheduleArgs) {
+          return MaterialPageRoute(
+            builder: (_) => SchedulePage(
+              initialFrom: args.from,
+              initialTo: args.to,
+              autoSearch: true,
+            ),
+          );
+        }
         return MaterialPageRoute(builder: (_) => const SchedulePage());
 
       case myBookings:

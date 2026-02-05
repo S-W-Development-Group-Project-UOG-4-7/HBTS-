@@ -4,21 +4,55 @@ import '../models/trip_model.dart';
 import '../api/trip_api.dart';
 import 'trip_details_page.dart';
 
+class ScheduleArgs {
+  final String from;
+  final String to;
+
+  const ScheduleArgs({
+    required this.from,
+    required this.to,
+  });
+}
+
 class SchedulePage extends StatefulWidget {
-  const SchedulePage({super.key});
+  final String? initialFrom;
+  final String? initialTo;
+  final bool autoSearch;
+
+  const SchedulePage({
+    super.key,
+    this.initialFrom,
+    this.initialTo,
+    this.autoSearch = false,
+  });
 
   @override
   State<SchedulePage> createState() => _SchedulePageState();
 }
 
 class _SchedulePageState extends State<SchedulePage> {
-  final _fromCtrl = TextEditingController(text: "Colombo");
-  final _toCtrl = TextEditingController(text: "Kandy");
+  late final TextEditingController _fromCtrl;
+  late final TextEditingController _toCtrl;
   DateTime _date = DateTime.now();
   int _passengers = 1;
 
   bool _loading = false;
   List<Trip> _results = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fromCtrl = TextEditingController(text: widget.initialFrom ?? "Colombo");
+    _toCtrl = TextEditingController(text: widget.initialTo ?? "Kandy");
+
+    if (widget.autoSearch) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (_fromCtrl.text.trim().isEmpty || _toCtrl.text.trim().isEmpty) return;
+        _search();
+      });
+    }
+  }
 
   @override
   void dispose() {

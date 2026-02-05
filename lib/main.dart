@@ -4,12 +4,12 @@ import 'package:provider/provider.dart';
 
 import 'app_routes.dart';
 import 'auth/auth_gate.dart';
+import 'services/realtime_ws.dart';
+import 'services/token_store.dart';
+import 'state/active_trip_store.dart';
+import 'state/conductor_store.dart';
 import 'state/notification_store.dart';
 import 'widgets/in_app_notification_banner.dart';
-
-import 'state/conductor_store.dart';
-import 'state/active_trip_store.dart';
-import 'services/realtime_ws.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -100,24 +100,6 @@ class _HBTSAppState extends State<HBTSApp> {
           }
         });
       }
-    final store = context.read<NotificationStore>();
-
-    // ✅ start websocket realtime after first frame
-    store.startRealtime();
-    store.startPolling(interval: const Duration(seconds: 3));
-
-    // ✅ listen for popup events
-    _sub = store.incomingStream.listen((n) {
-      if (!mounted) return;
-      final ctx = navigatorKey.currentContext;
-      if (ctx == null || !ctx.mounted) return;
-
-      InAppNotificationBanner.show(
-        ctx,
-        title: n.title,
-        message: n.message,
-        onTap: () => Navigator.pushNamed(ctx, AppRoutes.notifications),
-      );
     });
   }
 

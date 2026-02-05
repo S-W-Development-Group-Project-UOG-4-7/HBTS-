@@ -640,6 +640,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.1.5+1"
+  pub_semver:
+    dependency: transitive
+    description:
+      name: pub_semver
+      sha256: "5bfcf68ca79ef689f8990d1160781b4bad40a3bd5e5218ad4076ddb7f4081585"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.0"
   qr:
     dependency: transitive
     description:
@@ -656,14 +664,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.0"
-  pub_semver:
-    dependency: transitive
-    description:
-      name: pub_semver
-      sha256: "5bfcf68ca79ef689f8990d1160781b4bad40a3bd5e5218ad4076ddb7f4081585"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.2.0"
   sanitize_html:
     dependency: transitive
     description:
@@ -799,7 +799,6 @@ packages:
     version: "1.4.0"
   uuid:
     dependency: "direct main"
-    dependency: transitive
     description:
       name: uuid
       sha256: a11b666489b1954e01d992f3d601b1804a33937b5a8fe677bd26b8a9f96f96e8

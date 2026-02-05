@@ -28,7 +28,9 @@ console.log("DATABASE_URL (backend):", connectionString);
 export const pool = new pg.Pool({
   connectionString,
   ssl: useSsl ? { rejectUnauthorized: false } : undefined,
-  connectionTimeoutMillis: 5000,
+  connectionTimeoutMillis: 20000,
+  keepAlive: true,
+  keepAliveInitialDelayMillis: 10000,
 });
 
 pool.on("connect", () => {

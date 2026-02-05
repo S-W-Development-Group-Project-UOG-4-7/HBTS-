@@ -9,6 +9,7 @@ import '../state/notification_store.dart';
 import '../api/booking_api.dart';
 import '../models/my_booking_item.dart';
 import 'booking_details_page.dart';
+import 'schedule_page.dart';
 
 
 class HomePage extends StatefulWidget {
@@ -25,11 +26,20 @@ class _HomePageState extends State<HomePage> {
   int _navIndex = 0;
   UpcomingTripUiModel? _upcomingTrip;
   MyBookingItem? _upcomingBooking;
+  final TextEditingController _fromSearchCtrl = TextEditingController();
+  final TextEditingController _toSearchCtrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _initHome();
+  }
+
+  @override
+  void dispose() {
+    _fromSearchCtrl.dispose();
+    _toSearchCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _initHome() async {
@@ -164,6 +174,23 @@ void _goUpcomingSchedules() {
   void _goTrackBooking() => Navigator.pushNamed(context, routes.AppRoutes.trackMyBooking);
   void _goTrackBus() => Navigator.pushNamed(context, routes.AppRoutes.trackBus);
 
+  void _searchSchedules() {
+    final from = _fromSearchCtrl.text.trim();
+    final to = _toSearchCtrl.text.trim();
+    if (from.isEmpty || to.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter From and To locations")),
+      );
+      return;
+    }
+
+    Navigator.pushNamed(
+      context,
+      routes.AppRoutes.schedule,
+      arguments: ScheduleArgs(from: from, to: to),
+    );
+  }
+
   // Nearest trip card → booking details
   // Wire args later using your existing logic/models.
   void _goNearestTripDetails() {
@@ -271,10 +298,12 @@ void _goUpcomingSchedules() {
               userName: user.name,
               upcomingTrip: upcomingTrip,
               onUpcomingTripTap: _goNearestTripDetails,
-              onSearch: _goReserve,
+              onSearch: _searchSchedules,
               onUpcomingSchedules: _goUpcomingSchedules,
               onTrackBooking: _goTrackBooking,
               onTrackBus: _goTrackBus,
+              fromCtrl: _fromSearchCtrl,
+              toCtrl: _toSearchCtrl,
             ),
           ),
         ],
@@ -451,6 +480,8 @@ class _HomeBody extends StatelessWidget {
   final VoidCallback onUpcomingSchedules;
   final VoidCallback onTrackBooking;
   final VoidCallback onTrackBus;
+  final TextEditingController fromCtrl;
+  final TextEditingController toCtrl;
 
   const _HomeBody({
     required this.userName,
@@ -460,6 +491,8 @@ class _HomeBody extends StatelessWidget {
     required this.onUpcomingSchedules,
     required this.onTrackBooking,
     required this.onTrackBus,
+    required this.fromCtrl,
+    required this.toCtrl,
   });
 
   @override
@@ -526,14 +559,16 @@ class _HomeBody extends StatelessWidget {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 14),
-                const _InputLikeTile(
+                _InputLikeTile(
                   icon: Icons.location_on_outlined,
                   label: "From",
+                  controller: fromCtrl,
                 ),
                 const SizedBox(height: 10),
-                const _InputLikeTile(
+                _InputLikeTile(
                   icon: Icons.location_on_outlined,
                   label: "To",
+                  controller: toCtrl,
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
@@ -642,28 +677,33 @@ class _CardShell extends StatelessWidget {
 class _InputLikeTile extends StatelessWidget {
   final IconData icon;
   final String label;
+  final TextEditingController controller;
 
-  const _InputLikeTile({required this.icon, required this.label});
+  const _InputLikeTile({
+    required this.icon,
+    required this.label,
+    required this.controller,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 52,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.grey.shade300),
       ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.blue.shade700),
-          const SizedBox(width: 10),
-          Text(
-            label,
-            style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600),
-          ),
-        ],
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          prefixIcon: Icon(icon, color: Colors.blue.shade700),
+          hintText: label,
+          hintStyle: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+        ),
+        textInputAction: label == "From" ? TextInputAction.next : TextInputAction.search,
       ),
     );
   }
