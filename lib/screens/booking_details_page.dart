@@ -303,9 +303,25 @@ class SeatMapFromSeats extends StatelessWidget {
 
   const SeatMapFromSeats({super.key, required this.seats, required this.mySeatId});
 
+  bool get _hasRealLayout {
+    if (seats.isEmpty) return false;
+    final withLayout = seats.where((s) => s.layoutX != null && s.layoutY != null).length;
+    return withLayout >= (seats.length * 0.7); // 70% rule
+  }
+
   @override
   Widget build(BuildContext context) {
     if (seats.isEmpty) return const Text("No seats.");
+
+    if (_hasRealLayout) {
+      return SizedBox(
+        height: 520,
+        child: _buildSeatLayout(
+          seats: seats,
+          isMine: (s) => s.seatId == mySeatId,
+        ),
+      );
+    }
 
     final maxRow = seats.map((s) => s.seatRow).reduce((a, b) => a > b ? a : b);
     final maxCol = seats.map((s) => s.seatCol).reduce((a, b) => a > b ? a : b);
@@ -338,30 +354,77 @@ class SeatMapFromSeats extends StatelessWidget {
         if (seat == null || seat.seatType == "aisle") return const SizedBox.shrink();
 
         final isMine = seat.seatId == mySeatId;
-        final booked = seat.isBooked;
+        return _SeatTile(seat: seat, isMine: isMine);
+      },
+    );
+  }
+}
 
-        Color bg;
-        if (isMine) bg = Colors.blue.shade700;
-        else if (booked) bg = Colors.red.shade300;
-        else bg = Colors.grey.shade200;
 
-        return Container(
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.black12),
-          ),
-          child: Center(
-            child: Text(
-              seat.seatLabel,
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                color: (isMine || booked) ? Colors.white : Colors.black87,
+Widget _buildSeatLayout({
+  required List<Seat> seats,
+  required bool Function(Seat) isMine,
+}) {
+  final visibleSeats = seats.where((s) => s.layoutX != null && s.layoutY != null).toList();
+
+  return LayoutBuilder(
+    builder: (_, constraints) {
+      final w = constraints.maxWidth;
+      final h = constraints.maxHeight;
+
+      return Stack(
+        children: [
+          for (final seat in visibleSeats)
+            Positioned(
+              left: (seat.layoutX! / 100) * w,
+              top: (seat.layoutY! / 100) * h,
+              child: _SeatTile(
+                seat: seat,
+                isMine: isMine(seat),
               ),
             ),
+        ],
+      );
+    },
+  );
+}
+
+class _SeatTile extends StatelessWidget {
+  final Seat seat;
+  final bool isMine;
+
+  const _SeatTile({required this.seat, required this.isMine});
+
+  @override
+  Widget build(BuildContext context) {
+    final booked = seat.isBooked;
+
+    Color bg;
+    if (isMine) {
+      bg = Colors.blue.shade700;
+    } else if (booked) {
+      bg = Colors.red.shade300;
+    } else {
+      bg = Colors.grey.shade200;
+    }
+
+    return Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.black12),
+      ),
+      child: Center(
+        child: Text(
+          seat.seatLabel,
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            color: (isMine || booked) ? Colors.white : Colors.black87,
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

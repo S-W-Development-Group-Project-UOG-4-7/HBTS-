@@ -21,7 +21,7 @@ export async function createBooking(req, res) {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-    const { tripId, seatId, paidVia, boardingStopId, droppingStopId } = req.body;
+    const { tripId, seatId, paidVia, boardingStopId } = req.body;
 
     if (!tripId || !seatId || !paidVia) {
       return res.status(400).json({ message: "tripId, seatId, paidVia are required" });
@@ -29,10 +29,6 @@ export async function createBooking(req, res) {
 
     if (!["cash", "online"].includes(paidVia)) {
       return res.status(400).json({ message: "paidVia must be 'cash' or 'online'" });
-    }
-
-    if (boardingStopId === droppingStopId) {
-      return res.status(400).json({ message: "boardingStopId and droppingStopId must be different" });
     }
 
     // Clean expired pending bookings first (keeps availability accurate)
@@ -105,7 +101,48 @@ export async function createBooking(req, res) {
       return res.status(400).json({ message: "Invalid seat for this trip" });
     }
 
-    // ====== 3) Conflict check (TTL-aware for pending) ======
+    // ====== 3) Validate boarding stop belongs to this trip ======
+    if (!boardingStopId) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ message: "boardingStopId is required" });
+    }
+
+    const boardingCheck = await client.query(
+      `
+      SELECT 1
+      FROM trip_stops ts
+      WHERE ts.trip_id = $1
+        AND ts.stop_id = $2
+        AND ts.is_boarding_allowed = true
+      `,
+      [tripId, boardingStopId]
+    );
+
+    if (boardingCheck.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ message: "Invalid boarding stop for this trip" });
+    }
+
+    // ====== 3b) Force dropping stop = last stop of the trip ======
+    const dropQ = await client.query(
+      `
+      SELECT ts.stop_id
+      FROM trip_stops ts
+      WHERE ts.trip_id = $1
+      ORDER BY ts.stop_order DESC
+      LIMIT 1
+      `,
+      [tripId]
+    );
+
+    if (!dropQ.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ message: "Trip has no stops configured" });
+    }
+
+    const droppingStopId = Number(dropQ.rows[0].stop_id);
+
+    // ====== 4) Conflict check (TTL-aware for pending) ======
     const conflict = await client.query(
       `
       SELECT 1
@@ -126,7 +163,7 @@ export async function createBooking(req, res) {
       return res.status(409).json({ message: "Seat already booked" });
     }
 
-    // ====== 4) Price calculation (temporary) ======
+    // ====== 5) Price calculation (temporary) ======
     const priceRes = await client.query(
       `
       SELECT COALESCE(r.distance_km, 0) AS distance_km
@@ -140,7 +177,7 @@ export async function createBooking(req, res) {
     const distance = Number(priceRes.rows[0]?.distance_km || 0);
     const price = Math.round(distance * 10);
 
-    // ====== 5) Insert booking ======
+    // ====== 6) Insert booking ======
     const insert = await client.query(
       `
       INSERT INTO bookings (

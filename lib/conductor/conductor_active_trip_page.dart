@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 import '../app_routes.dart';
 import '../state/conductor_store.dart';
@@ -655,7 +656,7 @@ class _ConductorActiveTripPageState extends State<ConductorActiveTripPage>
     try {
       setState(() => _loading = true);
       // offline safe idempotency
-      final clientActionId = DateTime.now().microsecondsSinceEpoch.toString();
+      final clientActionId = const Uuid().v4();
       await ConductorApi.payCash(
         bookingId: bookingId,
         tripId: tripId,

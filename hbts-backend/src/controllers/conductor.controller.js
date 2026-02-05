@@ -34,11 +34,11 @@ function parseQr(qrRaw) {
   const trimmed = qrRaw.trim();
   if (!trimmed) return { ok: false, error: "QR is empty" };
 
-  // JSON QR: {"bookingId":123,"tripId":456}
+  // JSON QR: {"bookingId":123,"tripId":456} or {"bid":123,"sig":"..."}
   if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
     try {
       const obj = JSON.parse(trimmed);
-      const bookingId = Number(obj.bookingId ?? obj.booking_id);
+      const bookingId = Number(obj.bookingId ?? obj.booking_id ?? obj.bid);
       const tripId = obj.tripId != null ? Number(obj.tripId ?? obj.trip_id) : null;
 
       if (!Number.isFinite(bookingId)) return { ok: false, error: "Invalid bookingId in QR JSON" };
@@ -288,7 +288,11 @@ export async function getTripBookings(req, res) {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit || "30", 10)));
     const offset = (page - 1) * limit;
 
-    const where = [`b.trip_id = $1`, `t.deleted_at IS NULL`];
+    const where = [
+      `b.trip_id = $1`,
+      `t.deleted_at IS NULL`,
+      `b.status <> 'cancelled'::booking_status`,
+    ];
     const params = [tripId];
     let idx = 1;
 

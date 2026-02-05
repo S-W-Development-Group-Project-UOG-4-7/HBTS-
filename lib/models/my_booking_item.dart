@@ -70,10 +70,12 @@ class MyBookingItem {
 
   bool get isHistory {
     final t = tripStatus.toLowerCase().trim();
+    final s = status.toLowerCase().trim();
     final now = DateTime.now();
 
     // Always history if backend says so
     if (t == "cancelled" || t == "completed") return true;
+    if (s == "cancelled" || s == "expired") return true;
 
     // scheduled/running/started => move to history 24h after arrival time
     if (now.isAfter(arrivalTime.add(const Duration(hours: 24)))) {
